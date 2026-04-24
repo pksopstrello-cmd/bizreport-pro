@@ -2,7 +2,7 @@ import streamlit as st
 import pyotp
 import time
 from utils.supabase_client import get_supabase
-from utils.auth import login_user, verify_totp, get_user_profile, logout_user
+from utils.auth import login_user, logout_user, get_user_profile, check_permission, verify_totp, generate_totp_secret, get_totp_uri
 
 # Page config
 st.set_page_config(
@@ -15,249 +15,208 @@ st.set_page_config(
 # Custom CSS
 st.markdown("""
 <style>
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1e3a5f 0%, #0d2137 100%);
-    }
-    [data-testid="stSidebar"] * { color: #ffffff !important; }
-    .main-header {
-        background: linear-gradient(90deg, #1e3a5f, #2d6a9f);
-        padding: 1rem 2rem;
-        border-radius: 10px;
-        margin-bottom: 1.5rem;
-        color: white;
-    }
-    .metric-card {
-        background: #1a1f2e;
-        border: 1px solid #2d4a6e;
-        border-radius: 10px;
-        padding: 1.2rem;
-        text-align: center;
-    }
-    .login-container {
-        max-width: 400px;
-        margin: 0 auto;
-        padding: 2rem;
-        background: #1a1f2e;
-        border-radius: 15px;
-        border: 1px solid #2d4a6e;
-    }
-    .stButton > button {
-        background: linear-gradient(90deg, #1e3a5f, #2d6a9f);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        width: 100%;
-    }
-    .stButton > button:hover {
-        background: linear-gradient(90deg, #2d6a9f, #1e3a5f);
-    }
-    div[data-testid="stSelectbox"] label,
-    div[data-testid="stTextInput"] label { color: #a0b4c8 !important; }
+    .main-header { font-size: 2rem; font-weight: bold; color: #1f77b4; }
+    .sub-header { font-size: 1rem; color: #666; }
+    .login-box { max-width: 400px; margin: auto; }
+    .stAlert { border-radius: 8px; }
 </style>
 """, unsafe_allow_html=True)
 
-def show_login():
-    st.markdown('<div class="login-container">', unsafe_allow_html=True)
-    st.markdown("## 📊 BizReport Pro")
-    st.markdown("##### Business Intelligence Platform")
-    st.divider()
 
-    with st.form("login_form"):
-        email = st.text_input("📧 Email", placeholder="Enter your email")
-        password = st.text_input("🔒 Password", type="password", placeholder="Enter your password")
-        submitted = st.form_submit_button("Sign In", use_container_width=True)
+def show_login():
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("## 📊 BizReport Pro")
+        st.markdown("**Business Intelligence Platform**")
+        st.divider()
+
+        with st.form("login_form"):
+            email = st.text_input("📧 Email", placeholder="Enter your email")
+            password = st.text_input("🔒 Password", type="password", placeholder="Enter your password")
+            submitted = st.form_submit_button("Sign In", use_container_width=True)
 
         if submitted:
             if not email or not password:
-                st.error("Please enter email and password.")
-            else:
-                with st.spinner("Signing in..."):
-                    result = login_user(email, password)
-                    if result["success"]:
-                        st.session_state["auth_stage"] = "2fa"
-                        st.session_state["temp_user"] = result["user"]
-                        st.session_state["temp_session"] = result["session"]
-                        st.rerun()
-                    else:
-                        st.error(result["error"])
+                st.error("Please enter both email and password.")
+                return
 
-    st.markdown('</div>', unsafe_allow_html=True)
+            with st.spinner("Signing in..."):
+                user, error = login_user(email, password)
+
+            if error:
+                st.error(f"Login failed: {error}")
+                return
+
+            if user is None:
+                st.error("Invalid credentials. Please try again.")
+                return
+
+            # Get user profile
+            profile = get_user_profile(user.id)
+
+            if not profile:
+                st.error("User profile not found. Please contact your administrator.")
+                return
+
+            if not profile.get("is_approved", False):
+                st.error("Your account is pending approval. Please contact your administrator.")
+                return
+
+            # Check if 2FA is enabled
+            if profile.get("totp_enabled", False) and profile.get("totp_secret"):
+                st.session_state["pending_2fa_user"] = user
+                st.session_state["pending_2fa_profile"] = profile
+                st.session_state["show_2fa"] = True
+                st.rerun()
+            else:
+                st.session_state["user"] = user
+                st.session_state["profile"] = profile
+                st.session_state["logged_in"] = True
+                st.rerun()
+
 
 def show_2fa():
-    st.markdown('<div class="login-container">', unsafe_allow_html=True)
-    st.markdown("## 🔐 Two-Factor Authentication")
-    st.markdown("Enter the 6-digit code from your authenticator app, or the code provided by your admin.")
-    st.divider()
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("## 🔐 Two-Factor Authentication")
+        st.info("Enter the 6-digit code from your authenticator app or the one-time code from your admin.")
 
-    user = st.session_state.get("temp_user")
-    if not user:
-        st.session_state["auth_stage"] = "login"
-        st.rerun()
+        with st.form("totp_form"):
+            code = st.text_input("Verification Code", placeholder="Enter 6-digit code", max_chars=8)
+            submitted = st.form_submit_button("Verify", use_container_width=True)
 
-    # Get user profile to check if 2FA is enabled
-    profile = get_user_profile(user.id)
+        if submitted and code:
+            profile = st.session_state.get("pending_2fa_profile", {})
+            user = st.session_state.get("pending_2fa_user")
 
-    with st.form("totp_form"):
-        code = st.text_input("🔑 6-Digit Code", placeholder="123456", max_chars=6)
-        col1, col2 = st.columns(2)
-        with col1:
-            verify_btn = st.form_submit_button("Verify", use_container_width=True)
-        with col2:
-            back_btn = st.form_submit_button("Back", use_container_width=True)
+            totp_valid = verify_totp(profile.get("totp_secret", ""), code)
 
-        if verify_btn:
-            if not code or len(code) != 6:
-                st.error("Enter a valid 6-digit code.")
+            temp_valid = False
+            if profile.get("temp_code") and profile.get("temp_code_exp"):
+                import datetime
+                now = datetime.datetime.now(datetime.timezone.utc)
+                try:
+                    exp = datetime.datetime.fromisoformat(str(profile.get("temp_code_exp", "")).replace("Z", "+00:00"))
+                    if code == profile.get("temp_code") and now < exp:
+                        temp_valid = True
+                        supabase = get_supabase()
+                        supabase.table("profiles").update({"temp_code": None, "temp_code_exp": None}).eq("id", user.id).execute()
+                except Exception:
+                    pass
+
+            if totp_valid or temp_valid:
+                st.session_state["user"] = user
+                st.session_state["profile"] = profile
+                st.session_state["logged_in"] = True
+                for k in ["pending_2fa_user", "pending_2fa_profile", "show_2fa"]:
+                    st.session_state.pop(k, None)
+                st.rerun()
             else:
-                result = verify_totp(user.id, code, profile)
-                if result["success"]:
-                    st.session_state["authenticated"] = True
-                    st.session_state["user"] = user
-                    st.session_state["profile"] = profile
-                    st.session_state["session"] = st.session_state["temp_session"]
-                    del st.session_state["auth_stage"]
-                    del st.session_state["temp_user"]
-                    del st.session_state["temp_session"]
-                    st.success("Login successful!")
-                    time.sleep(0.5)
-                    st.rerun()
-                else:
-                    st.error(result["error"])
+                st.error("Invalid verification code.")
 
-        if back_btn:
-            st.session_state["auth_stage"] = "login"
-            logout_user()
+        if st.button("← Back to Login"):
+            for k in ["pending_2fa_user", "pending_2fa_profile", "show_2fa"]:
+                st.session_state.pop(k, None)
             st.rerun()
 
-    st.markdown('</div>', unsafe_allow_html=True)
 
-def show_dashboard():
-    user = st.session_state.get("user")
-    profile = st.session_state.get("profile")
-
-    if not user or not profile:
-        st.session_state.clear()
-        st.rerun()
-
+def show_sidebar():
+    profile = st.session_state.get("profile", {})
     role = profile.get("role", "viewer")
-    username = profile.get("username", "User")
+    full_name = profile.get("full_name") or profile.get("username") or "User"
 
-    # Sidebar
     with st.sidebar:
-        st.markdown(f"### 👤 {username}")
-        st.markdown(f"**Role:** {role.title()}")
+        st.markdown(f"### 👤 {full_name}")
+        st.caption(f"Role: **{role.upper()}**")
         st.divider()
-
-        # Project selector
-        supabase = get_supabase()
-        projects_res = supabase.table("projects").select("*").eq("is_active", True).execute()
-        projects = projects_res.data if projects_res.data else []
-
-        if projects:
-            project_names = [p["name"] for p in projects]
-            if "selected_project" not in st.session_state:
-                st.session_state["selected_project"] = projects[0]["id"]
-
-            selected_name = st.selectbox("📁 Project", project_names)
-            selected_project = next((p for p in projects if p["name"] == selected_name), projects[0])
-            st.session_state["selected_project"] = selected_project["id"]
-            st.session_state["selected_project_name"] = selected_project["name"]
-
-        st.divider()
-        st.markdown("**📊 Navigation**")
+        st.markdown("### 📊 Navigation")
 
         pages = {
             "🏠 Dashboard": "dashboard",
-            "🔄 Reconciliation": "recon",
+            "🔍 Recon": "recon",
             "📈 Performance": "performance",
-            "🔍 Analysis": "analysis",
-            "❤️ Health Status": "health",
+            "📉 Analysis": "analysis",
+            "💚 Health Status": "health",
             "📅 Daily Report": "daily",
             "📆 Monthly Report": "monthly",
-            "💰 Agent Commission": "commission",
+            "💰 Commission": "commission",
+            "📁 Uploads": "uploads",
+            "📋 Reports": "reports",
         }
-
-        if role in ["superadmin", "admin", "staff"]:
-            pages["📤 File Uploads"] = "uploads"
-            pages["📋 Reports"] = "reports"
 
         if role in ["superadmin", "admin"]:
             pages["⚙️ Admin Panel"] = "admin"
 
-        if "current_page" not in st.session_state:
-            st.session_state["current_page"] = "dashboard"
-
         for label, page_key in pages.items():
-            if st.button(label, use_container_width=True, key=f"nav_{page_key}"):
+            if st.sidebar.button(label, key=f"nav_{page_key}", use_container_width=True):
                 st.session_state["current_page"] = page_key
 
         st.divider()
-        if st.button("🚪 Sign Out", use_container_width=True):
+        if st.sidebar.button("🚪 Logout", use_container_width=True):
             logout_user()
-            st.session_state.clear()
             st.rerun()
 
-    # Main content
-    current_page = st.session_state.get("current_page", "dashboard")
-    project_id = st.session_state.get("selected_project")
-    project_name = st.session_state.get("selected_project_name", "")
 
-    # Header
-    st.markdown(f'<div class="main-header"><h2>📊 BizReport Pro</h2><p>Project: {project_name}</p></div>', unsafe_allow_html=True)
+def show_main_content():
+    page = st.session_state.get("current_page", "dashboard")
+    profile = st.session_state.get("profile", {})
+    role = profile.get("role", "viewer")
 
-    # Route to pages
-    if current_page == "dashboard":
-        from pages import dashboard
-        dashboard.show(project_id, project_name, profile)
-    elif current_page == "recon":
-        from pages import recon
-        recon.show(project_id, project_name, profile)
-    elif current_page == "performance":
-        from pages import performance
-        performance.show(project_id, project_name, profile)
-    elif current_page == "analysis":
-        from pages import analysis
-        analysis.show(project_id, project_name, profile)
-    elif current_page == "health":
-        from pages import health
-        health.show(project_id, project_name, profile)
-    elif current_page == "daily":
-        from pages import daily
-        daily.show(project_id, project_name, profile)
-    elif current_page == "monthly":
-        from pages import monthly
-        monthly.show(project_id, project_name, profile)
-    elif current_page == "commission":
-        from pages import commission
-        commission.show(project_id, project_name, profile)
-    elif current_page == "uploads":
-        from pages import uploads
-        uploads.show(project_id, project_name, profile)
-    elif current_page == "reports":
-        from pages import reports
-        reports.show(project_id, project_name, profile)
-    elif current_page == "admin":
-        if role in ["superadmin", "admin"]:
-            from pages import admin
-            admin.show(profile)
+    try:
+        if page == "dashboard":
+            from pages.dashboard import show_dashboard
+            show_dashboard()
+        elif page == "recon":
+            from pages.recon import show_recon
+            show_recon()
+        elif page == "performance":
+            from pages.performance import show_performance
+            show_performance()
+        elif page == "analysis":
+            from pages.analysis import show_analysis
+            show_analysis()
+        elif page == "health":
+            from pages.health import show_health
+            show_health()
+        elif page == "daily":
+            from pages.daily import show_daily
+            show_daily()
+        elif page == "monthly":
+            from pages.monthly import show_monthly
+            show_monthly()
+        elif page == "commission":
+            from pages.commission import show_commission
+            show_commission()
+        elif page == "uploads":
+            from pages.uploads import show_uploads
+            show_uploads()
+        elif page == "reports":
+            from pages.reports import show_reports
+            show_reports()
+        elif page == "admin" and role in ["superadmin", "admin"]:
+            from pages.admin import show_admin
+            show_admin()
         else:
-            st.error("Access denied.")
+            st.warning("Page not found or access denied.")
+    except Exception as e:
+        st.error(f"Error loading page: {str(e)}")
+        st.exception(e)
 
-# Main routing
+
 def main():
-    if "authenticated" not in st.session_state:
-        st.session_state["authenticated"] = False
+    if "logged_in" not in st.session_state:
+        st.session_state["logged_in"] = False
+    if "current_page" not in st.session_state:
+        st.session_state["current_page"] = "dashboard"
 
-    auth_stage = st.session_state.get("auth_stage", "login")
-
-    if not st.session_state["authenticated"]:
-        if auth_stage == "2fa":
-            show_2fa()
-        else:
-            show_login()
+    if st.session_state.get("show_2fa"):
+        show_2fa()
+    elif not st.session_state.get("logged_in"):
+        show_login()
     else:
-        show_dashboard()
+        show_sidebar()
+        show_main_content()
+
 
 if __name__ == "__main__":
     main()
