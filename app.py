@@ -166,9 +166,9 @@ def show_dashboard():
         c4.metric("Project", project["name"])
         st.divider()
         st.subheader("Recent Uploads")
-        recent = sb.table("uploads").select("*").eq("project_id", pid).order("uploaded_at", desc=True).limit(5).execute()
+        recent = sb.table("uploads").select("*").eq("project_id", pid).order("created_at", desc=True).limit(5).execute()
         if recent.data:
-            df = pd.DataFrame(recent.data)[["filename", "file_type", "uploaded_at"]]
+            df = pd.DataFrame(recent.data)[["filename", "file_type", "created_at"]]
             st.dataframe(df, use_container_width=True)
         else:
             st.info("No uploads yet for this project.")
@@ -194,7 +194,7 @@ def show_uploads():
                 sb.table("uploads").insert({
                     "project_id": project["id"], "uploaded_by": user["id"],
                     "filename": f.name, "file_type": f.type,
-                    "storage_path": path, "uploaded_at": datetime.datetime.utcnow().isoformat()
+                    "storage_path": path, "created_at": datetime.datetime.utcnow().isoformat()
                 }).execute()
                 st.success(f"Uploaded: {f.name}")
             except Exception as e:
