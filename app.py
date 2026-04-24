@@ -10,21 +10,32 @@ from utils.supabase_client import get_supabase
 st.set_page_config(page_title="BizReport Pro", page_icon="&#x1F4CA;", layout="wide", initial_sidebar_state="expanded")
 st.markdown("""<style>.stAlert{border-radius:8px}</style>""", unsafe_allow_html=True)
 
-# AUTH
+# ── TABLE NAMES ──────────────────────────
+# profiles   : users (id, username, full_name, role, is_approved, is_active, totp_secret, totp_enabled, temp_code, temp_code_exp)
+# projects   : id, name, code, description, is_active
+# permissions: id, user_id, project_id, module, can_view, can_upload, can_download
+# uploads    : id, project_id, uploaded_by, filename, file_type, storage_path, uploaded_at
+# reports    : id, project_id, created_by, title, content, created_at
+# ─────────────────────────────────────────
+
 def do_login(email, password):
+    """Returns (profile_dict, error_str)"""
     try:
         sb = get_supabase()
         resp = sb.auth.sign_in_with_password({"email": email, "password": password})
         if not resp.user:
             return None, "Invalid credentials"
         uid = resp.user.id
-        profile = sb.table("users").select("*").eq("id", uid).single().execute()
+        profile = sb.table("profiles").select("*").eq("id", uid).single().execute()
         if not profile.data:
             return None, "User profile not found. Contact admin."
         if not profile.data.get("is_approved", False):
             sb.auth.sign_out()
             return None, "Account pending approval. Contact admin."
-        return profile.data, None
+        # Add email to profile dict for convenience
+        p = dict(profile.data)
+        p["email"] = resp.user.email
+        return p, None
     except Exception as e:
         return None, str(e)
 
@@ -44,7 +55,7 @@ def generate_temp_password(length=12):
 def show_login():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("## &#x1F4CA; BizReport Pro")
+        st.markdown("## BizReport Pro")
         st.markdown("**Business Intelligence Platform**")
         st.divider()
         with st.form("login_form"):
@@ -73,8 +84,13 @@ def get_projects():
             res = sb.table("projects").select("*").eq("is_active", True).execute()
             return res.data or []
         uid = user.get("id", "")
-        res = sb.table("user_project_permissions").select("project_id, projects(*)").eq("user_id", uid).execute()
-        return [r["projects"] for r in (res.data or []) if r.get("projects")]
+        # Get projects the user has permissions for
+        res = sb.table("permissions").select("project_id").eq("user_id", uid).execute()
+        proj_ids = list({r["project_id"] for r in (res.data or []) if r.get("project_id")})
+        if not proj_ids:
+            return []
+        projs = sb.table("projects").select("*").in_("id", proj_ids).eq("is_active", True).execute()
+        return projs.data or []
     except Exception:
         return []
 
@@ -85,7 +101,7 @@ def project_selector():
         return None
     names = [p["name"] for p in projects]
     sel = st.session_state.get("selected_project", projects[0])
-    if sel.get("name") not in names:
+    if not isinstance(sel, dict) or sel.get("name") not in names:
         sel = projects[0]
     idx = names.index(sel["name"])
     chosen = st.selectbox("Project", names, index=idx, key="proj_select")
@@ -136,7 +152,8 @@ def show_dashboard():
     if not project:
         return
     user = st.session_state.user
-    st.markdown(f"### Welcome back, {user.get('username', 'User')}!")
+    name = user.get("full_name") or user.get("username", "User")
+    st.markdown(f"### Welcome back, {name}!")
     try:
         sb = get_supabase()
         pid = project["id"]
@@ -215,19 +232,20 @@ def show_admin():
     with tab1:
         st.subheader("All Users")
         try:
-            users = sb.table("users").select("*").order("created_at", desc=True).execute().data or []
+            users = sb.table("profiles").select("*").order("created_at", desc=True).execute().data or []
             if not users:
                 st.info("No users found.")
             for u in users:
-                badge = "Active" if u.get("is_approved") else "Pending"
-                with st.expander(f"[{badge}] {u.get('username','?')} | {u.get('email','?')} | {u.get('role','viewer')}"):
+                status = "Active" if u.get("is_approved") else "Pending"
+                with st.expander(f"[{status}] {u.get('username','?')} | {u.get('full_name','?')} | {u.get('role','viewer')}"):
                     uid = u["id"]
                     c1, c2 = st.columns(2)
                     with c1:
-                        st.write(f"**Email:** {u['email']}")
                         st.write(f"**Username:** {u.get('username','N/A')}")
+                        st.write(f"**Full Name:** {u.get('full_name','N/A')}")
                         st.write(f"**Role:** {u.get('role','viewer')}")
                         st.write(f"**Approved:** {'Yes' if u.get('is_approved') else 'No'}")
+                        st.write(f"**Active:** {'Yes' if u.get('is_active') else 'No'}")
                         st.write(f"**2FA:** {'Enabled' if u.get('totp_enabled') else 'Disabled'}")
                     with c2:
                         new_role = st.selectbox("Role", ["viewer","staff","admin","superadmin"],
@@ -236,29 +254,29 @@ def show_admin():
                         ca, cb = st.columns(2)
                         with ca:
                             if st.button("Save Role", key=f"sr_{uid}"):
-                                sb.table("users").update({"role": new_role}).eq("id", uid).execute()
+                                sb.table("profiles").update({"role": new_role}).eq("id", uid).execute()
                                 st.success("Role updated!"); st.rerun()
                         with cb:
                             if u.get("is_approved"):
                                 if st.button("Revoke", key=f"rv_{uid}"):
-                                    sb.table("users").update({"is_approved": False}).eq("id", uid).execute()
+                                    sb.table("profiles").update({"is_approved": False}).eq("id", uid).execute()
                                     st.success("Revoked."); st.rerun()
                             else:
                                 if st.button("Approve", key=f"ap_{uid}"):
-                                    sb.table("users").update({"is_approved": True}).eq("id", uid).execute()
+                                    sb.table("profiles").update({"is_approved": True}).eq("id", uid).execute()
                                     st.success("Approved!"); st.rerun()
                     st.markdown("**Project Access:**")
                     all_proj = sb.table("projects").select("*").eq("is_active", True).execute().data or []
-                    assigned = {p["project_id"] for p in (sb.table("user_project_permissions").select("project_id").eq("user_id", uid).execute().data or [])}
+                    assigned = {p["project_id"] for p in (sb.table("permissions").select("project_id").eq("user_id", uid).execute().data or [])}
                     for proj in all_proj:
                         pid = proj["id"]
                         has = pid in assigned
                         chk = st.checkbox(proj["name"], value=has, key=f"pc_{uid}_{pid}")
                         if chk != has:
                             if chk:
-                                sb.table("user_project_permissions").insert({"user_id": uid, "project_id": pid, "can_view": True, "can_upload": True}).execute()
+                                sb.table("permissions").insert({"user_id": uid, "project_id": pid, "module": "all", "can_view": True, "can_upload": True, "can_download": True}).execute()
                             else:
-                                sb.table("user_project_permissions").delete().eq("user_id", uid).eq("project_id", pid).execute()
+                                sb.table("permissions").delete().eq("user_id", uid).eq("project_id", pid).execute()
                             st.success(f"Updated {proj['name']}"); st.rerun()
         except Exception as e:
             st.error(f"Error: {e}")
@@ -268,6 +286,7 @@ def show_admin():
         with st.form("add_user_form"):
             nu_email = st.text_input("Email")
             nu_username = st.text_input("Username")
+            nu_fullname = st.text_input("Full Name")
             nu_role = st.selectbox("Role", ["viewer","staff","admin"])
             all_p = sb.table("projects").select("*").eq("is_active", True).execute().data or []
             sel_p = st.multiselect("Assign Projects", [p["name"] for p in all_p])
@@ -282,18 +301,18 @@ def show_admin():
                             "email": nu_email, "password": tmp_pass, "email_confirm": True
                         })
                         new_uid = auth_res.user.id
-                        sb.table("users").insert({
-                            "id": new_uid, "email": nu_email, "username": nu_username,
+                        sb.table("profiles").insert({
+                            "id": new_uid, "username": nu_username,
+                            "full_name": nu_fullname or nu_username,
                             "role": nu_role, "is_approved": auto_approve,
-                            "totp_enabled": False,
-                            "created_at": datetime.datetime.utcnow().isoformat()
+                            "is_active": True, "totp_enabled": False
                         }).execute()
                         for pname in sel_p:
                             for p in all_p:
                                 if p["name"] == pname:
-                                    sb.table("user_project_permissions").insert({
+                                    sb.table("permissions").insert({
                                         "user_id": new_uid, "project_id": p["id"],
-                                        "can_view": True, "can_upload": True
+                                        "module": "all", "can_view": True, "can_upload": True, "can_download": True
                                     }).execute()
                         st.success(f"User created: {nu_email}")
                         st.info(f"Temp Password: {tmp_pass}")
@@ -304,34 +323,36 @@ def show_admin():
     with tab3:
         st.subheader("Edit User Permissions")
         try:
-            ulist = sb.table("users").select("id, username, email, role").execute().data or []
+            ulist = sb.table("profiles").select("id, username, full_name, role").execute().data or []
             if ulist:
-                u_opts = {f"{u.get('username','?')} ({u['email']})": u["id"] for u in ulist}
+                u_opts = {f"{u.get('username','?')} - {u.get('full_name','?')}": u["id"] for u in ulist}
                 sel_u = st.selectbox("Select User", list(u_opts.keys()))
                 target_uid = u_opts[sel_u]
                 all_proj = sb.table("projects").select("*").eq("is_active", True).execute().data or []
-                user_proj = sb.table("user_project_permissions").select("project_id, can_view, can_upload").eq("user_id", target_uid).execute().data or []
-                proj_map = {p["project_id"]: p for p in user_proj}
+                user_perms = sb.table("permissions").select("project_id, can_view, can_upload, can_download").eq("user_id", target_uid).execute().data or []
+                proj_map = {p["project_id"]: p for p in user_perms}
                 changes = {}
                 for proj in all_proj:
                     pid = proj["id"]
                     ex = proj_map.get(pid, {})
                     has = pid in proj_map
-                    cc1, cc2, cc3 = st.columns([3,1,1])
+                    cc1, cc2, cc3, cc4 = st.columns([3,1,1,1])
                     with cc1:
                         access = st.checkbox(proj["name"], value=has, key=f"pa_{target_uid}_{pid}")
                     with cc2:
                         view = st.checkbox("View", value=ex.get("can_view", True), key=f"pv_{target_uid}_{pid}", disabled=not access)
                     with cc3:
                         upload = st.checkbox("Upload", value=ex.get("can_upload", False), key=f"pu_{target_uid}_{pid}", disabled=not access)
-                    changes[pid] = {"access": access, "view": view, "upload": upload}
+                    with cc4:
+                        download = st.checkbox("Download", value=ex.get("can_download", False), key=f"pd_{target_uid}_{pid}", disabled=not access)
+                    changes[pid] = {"access": access, "view": view, "upload": upload, "download": download}
                 if st.button("Save Permissions", use_container_width=True):
-                    sb.table("user_project_permissions").delete().eq("user_id", target_uid).execute()
+                    sb.table("permissions").delete().eq("user_id", target_uid).execute()
                     for pid, ch in changes.items():
                         if ch["access"]:
-                            sb.table("user_project_permissions").insert({
-                                "user_id": target_uid, "project_id": pid,
-                                "can_view": ch["view"], "can_upload": ch["upload"]
+                            sb.table("permissions").insert({
+                                "user_id": target_uid, "project_id": pid, "module": "all",
+                                "can_view": ch["view"], "can_upload": ch["upload"], "can_download": ch["download"]
                             }).execute()
                     st.success("Permissions saved!"); st.rerun()
         except Exception as e:
@@ -340,10 +361,11 @@ def show_admin():
     with tab4:
         st.subheader("Projects")
         try:
-            projs = sb.table("projects").select("*").execute().data or []
+            projs = sb.table("projects").select("*").order("created_at").execute().data or []
             for p in projs:
                 status = "Active" if p.get("is_active") else "Inactive"
                 with st.expander(f"[{status}] {p['name']} ({p.get('code','')})"):
+                    st.write(f"Description: {p.get('description','')}")
                     st.write(f"Code: {p.get('code','')} | Status: {status}")
                     if p.get("is_active"):
                         if st.button("Deactivate", key=f"dact_{p['id']}"):
@@ -358,10 +380,11 @@ def show_admin():
         with st.form("add_proj_form"):
             pn = st.text_input("Project Name")
             pc = st.text_input("Project Code (e.g. NEW_PROJ)")
+            pd_desc = st.text_input("Description (optional)")
             if st.form_submit_button("Add Project"):
                 if pn and pc:
                     try:
-                        sb.table("projects").insert({"name": pn, "code": pc.upper(), "is_active": True}).execute()
+                        sb.table("projects").insert({"name": pn, "code": pc.upper(), "description": pd_desc, "is_active": True}).execute()
                         st.success(f"Added: {pn}"); st.rerun()
                     except Exception as e:
                         st.error(f"Error: {e}")
@@ -370,8 +393,8 @@ def show_admin():
 
     with tab5:
         st.subheader("Security Management")
-        all_users = sb.table("users").select("id, username, email, totp_enabled").execute().data or []
-        u_sec = {f"{u.get('username','?')} ({u['email']})": u for u in all_users}
+        all_users_raw = sb.table("profiles").select("id, username, full_name, totp_enabled").execute().data or []
+        u_sec = {f"{u.get('username','?')} ({u.get('full_name','?')})": u for u in all_users_raw}
 
         st.markdown("### Reset User Password")
         with st.form("reset_pw_form"):
@@ -382,7 +405,7 @@ def show_admin():
                 use_pw = new_pw.strip() if new_pw.strip() else generate_temp_password()
                 try:
                     sb.auth.admin.update_user_by_id(target["id"], {"password": use_pw})
-                    st.success(f"Password reset for {target['email']}")
+                    st.success(f"Password reset for {target.get('username', target['id'])}")
                     if not new_pw.strip():
                         st.info(f"Temp Password: {use_pw}")
                         st.warning("Share this securely with the user.")
@@ -396,20 +419,26 @@ def show_admin():
             if st.form_submit_button("Reset 2FA", use_container_width=True):
                 target = u_sec[sel_2fa]
                 try:
-                    sb.table("users").update({"totp_secret": None, "totp_enabled": False}).eq("id", target["id"]).execute()
-                    st.success(f"2FA reset for {target['email']}. User must re-setup 2FA on next login.")
+                    sb.table("profiles").update({"totp_secret": None, "totp_enabled": False}).eq("id", target["id"]).execute()
+                    st.success(f"2FA reset for {target.get('username', target['id'])}. User must re-setup 2FA.")
                 except Exception as e:
                     st.error(f"Error: {e}")
 
         st.divider()
         st.markdown("### Generate One-Time Admin Code")
-        st.caption("Use this if a user lost access to their 2FA device.")
+        st.caption("Use if a user lost access to their 2FA device.")
         with st.form("otp_form"):
             sel_otp = st.selectbox("Select User", list(u_sec.keys()), key="otp_sel")
             if st.form_submit_button("Generate Code", use_container_width=True):
+                target = u_sec[sel_otp]
                 otp = "".join(secrets.choice(string.digits) for _ in range(8))
-                st.success("One-time code generated!")
-                st.info(f"Code: {otp}   (valid 15 min - share securely)")
+                exp = (datetime.datetime.utcnow() + datetime.timedelta(minutes=15)).isoformat()
+                try:
+                    sb.table("profiles").update({"temp_code": otp, "temp_code_exp": exp}).eq("id", target["id"]).execute()
+                    st.success("One-time code saved in database!")
+                    st.info(f"Code: {otp}   (valid 15 min - share securely via phone/secure channel)")
+                except Exception as e:
+                    st.info(f"Code: {otp}   (valid 15 min - share securely)")
 
         st.divider()
         st.markdown("### Change My Own Password")
@@ -430,7 +459,7 @@ def show_admin():
                     except Exception as e:
                         st.error(f"Error: {e}")
 
-# ROUTER
+# ROUTER + MAIN
 def show_main_content():
     routes = {
         "dashboard": show_dashboard, "recon": show_recon,
@@ -446,7 +475,7 @@ def main():
     if "user" not in st.session_state:
         show_login()
         return
-    # Safety: ensure user is a dict (not a stale Supabase User object)
+    # Safety: ensure user is a valid dict (not stale Supabase object)
     if not isinstance(st.session_state.user, dict):
         do_logout()
         st.rerun()
