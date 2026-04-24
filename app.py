@@ -446,6 +446,11 @@ def main():
     if "user" not in st.session_state:
         show_login()
         return
+    # Safety: ensure user is a dict (not a stale Supabase User object)
+    if not isinstance(st.session_state.user, dict):
+        do_logout()
+        st.rerun()
+        return
     show_sidebar()
     show_main_content()
 
