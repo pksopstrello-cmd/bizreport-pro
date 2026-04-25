@@ -541,10 +541,10 @@ def show_performance():
         tab_names = ["JP-JWINR (Deposit)","JP-JWINR (Withdraw)","DP-JWINR (Deposit)","DP-JWINR (Withdraw)"]
         tabs = st.tabs(tab_names)
         configs = [
-            ("JP-INR","deposit","JP-JWINR Agent Deposit Data"),
-            ("JP-INR","withdraw","JP-JWINR Agent Withdraw Data"),
-            ("DP-INR","deposit","DP-JWINR Agent Deposit Data"),
-            ("DP-INR","withdraw","DP-JWINR Agent Withdraw Data"),
+            ("JP-JWINR","deposit","JP-JWINR Agent Deposit Data"),
+            ("JP-JWINR","withdraw","JP-JWINR Agent Withdraw Data"),
+            ("DP-JWINR","deposit","DP-JWINR Agent Deposit Data"),
+            ("DP-JWINR","withdraw","DP-JWINR Agent Withdraw Data"),
         ]
         for i, (merchant, tx_type, title_base) in enumerate(configs):
             with tabs[i]:
@@ -554,7 +554,7 @@ def show_performance():
                     render_agent_table(rows, totals, f"{title_base}{date_label}", tx_type)
                 else:
                     # try alternate merchant names
-                    alt = {"JP-INR":["JPINR","JP INR","JP"],"DP-INR":["DPINR","DP INR","DP"]}
+                    alt = {"JP-JWINR":["JP-INR","JPINR","JP INR","JP"],"DP-JWINR":["DP-INR","DPINR","DP INR","DP"]}
                     res2 = compute_agent_summary(df, alt.get(merchant,[]), tx_type)
                     if res2 and res2[0]:
                         rows, totals = res2
