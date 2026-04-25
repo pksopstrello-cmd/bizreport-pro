@@ -213,7 +213,7 @@ def show_uploads():
                 sb.storage.from_("uploads").upload(path, content, {"content-type": f.type or "application/octet-stream"})
                 sb.table("uploads").insert({
                     "project_id": project["id"], "uploaded_by": user["id"],
-                    "filename": f.name, "file_type": f.type,
+                    "filename": f.name, "original_filename": f.name, "file_type": f.type, "file_size": f.size,
                     "file_url": path, "created_at": datetime.datetime.utcnow().isoformat()
                 }).execute()
                 st.success(f"Uploaded: {f.name}")
