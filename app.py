@@ -16,13 +16,13 @@ st.markdown("""<style>
 .rop-col{background-color:#f0a500!important;color:white!important;}
 </style>""", unsafe_allow_html=True)
 
-# ââ TABLE MAP âââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂ TABLE MAP Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 # profiles   : id, username, full_name, role, is_approved, is_active, totp_secret, totp_enabled, temp_code, temp_code_exp
 # projects   : id, name, code, description, is_active
 # permissions: id, user_id, project_id, module, can_view, can_upload, can_download
 # uploads    : id, project_id, uploaded_by, filename, original_filename, file_type, file_size, file_url, module, description, created_at
 # reports    : id, project_id, generated_by, title, report_type, report_date, summary_data, html_content, file_url, created_at
-# âââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 
 # COMMISSION RATES (JP JW INR & PredictGo VF-INR)
 COMMISSION_RATES = {
@@ -220,9 +220,9 @@ def show_uploads():
             except Exception as e:
                 st.error(f"Error uploading {f.name}: {e}")
 
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 # DAILY PERFORMANCE HELPERS
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 
 def parse_time_to_seconds(t):
     """Convert HH:MM:SS or MM:SS string to total seconds."""
@@ -490,9 +490,9 @@ def display_summary_table(df, title, color="#f0a500"):
     st.dataframe(display_df, use_container_width=True, height=500)
 
 
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 # AGENT REPORT HELPERS (shared by Daily Performance)
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 @st.cache_data(ttl=300)
 def load_project_file_app(project_id):
@@ -578,7 +578,7 @@ def _pt_bucket_ar(sec):
 
 
 _PT_COLS_AR = ["le1", "1to3", "3to5", "5to10", "10to15", "15to30", "30to60", "gt1hr"]
-_PT_LABELS_AR = ["≤1 Min", "1-3 Mins", "3-5 Mins", "5-10 Mins", "10-15 Mins", "15-30 Mins", "30-60 Mins", ">1 Hr"]
+_PT_LABELS_AR = ["â¤1 Min", "1-3 Mins", "3-5 Mins", "5-10 Mins", "10-15 Mins", "15-30 Mins", "30-60 Mins", ">1 Hr"]
 _AGENTS_ORDER_AR = [
     "apluspay-wake", "expay", "kingpay", "kingpayWD", "okpay", "oxpay",
     "paypay", "paypay-wake", "simplypay", "smilepayz", "vvpay", "yfrdnqpay-wake"
@@ -801,7 +801,7 @@ def render_agent_table_daily(rows, totals_info, title, tx_type="deposit"):
         display_rows.append(gr)
         row_styles.append("group")
         gt = dict(gr)
-        gt["Agent Group"] = f"↳ {grp} Total"
+        gt["Agent Group"] = f"â³ {grp} Total"
         gt["#"] = str(_GROUPS_AR.index(grp) + 2)
         display_rows.append(gt)
         row_styles.append("group_total")
@@ -837,7 +837,7 @@ def render_agent_table_daily(rows, totals_info, title, tx_type="deposit"):
     auto_pct_c = len(auto_d) / all_count * 100 if all_count else 0
     auto_pct_a = tot_auto_amt / all_amount * 100 if all_amount else 0
     auto_row = make_row(
-        f"• Auto (Normal {cnt_lbl})", len(auto_d), tot_auto_amt, 0, 0,
+        f"â¢ Auto (Normal {cnt_lbl})", len(auto_d), tot_auto_amt, 0, 0,
         auto_pct_c, auto_pct_a,
         all_auto_pt.mean() if len(all_auto_pt) > 0 else np.nan,
         all_auto_pt.min() if len(all_auto_pt) > 0 else np.nan,
@@ -850,7 +850,7 @@ def render_agent_table_daily(rows, totals_info, title, tx_type="deposit"):
     man_pct_c = len(manual_d) / all_count * 100 if all_count else 0
     man_pct_a = tot_manual_amt / all_amount * 100 if all_amount else 0
     man_row = make_row(
-        f"• Manual (M{cnt_lbl})", len(manual_d), tot_manual_amt, 0, 0,
+        f"â¢ Manual (M{cnt_lbl})", len(manual_d), tot_manual_amt, 0, 0,
         man_pct_c, man_pct_a, np.nan, np.nan, np.nan,
         {b: 0 for b in _PT_COLS_AR}, np.nan, np.nan, np.nan, np.nan,
         100.0 if len(manual_d) == 0 else np.nan
@@ -892,9 +892,9 @@ def render_agent_table_daily(rows, totals_info, title, tx_type="deposit"):
     st.dataframe(styled, use_container_width=True, hide_index=True)
 
 
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 # DAILY PERFORMANCE
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def show_daily():
     st.markdown("## Daily Performance")
     project = project_selector()
@@ -911,15 +911,15 @@ def show_daily():
         wd_label = "DP-JWINR (Withdraw)"
         dp_title = "JP-JWINR Agent Deposit Data"
         wd_title = "JP-JWINR Agent Withdraw Data"
-        dp_merchant = "JP-JWINR"
-        wd_merchant = "JP-JWINR"
+        dp_merchants = ["JP-JWINR", "DP-JWINR"]
+        wd_merchants = ["JP-JWINR", "DP-JWINR"]
     elif proj_code == "PREDICTGO_VF_INR":
         dp_label = "PG-VFINR (Deposit)"
         wd_label = "PG-VFINR (Withdraw)"
         dp_title = "PredictGo VF-INR Agent Deposit Data"
         wd_title = "PredictGo VF-INR Agent Withdraw Data"
-        dp_merchant = "VF"
-        wd_merchant = "VF"
+        dp_merchants = ["VF", "VF-INR", "VFINR"]
+        wd_merchants = ["VF", "VF-INR", "VFINR"]
     else:
         st.info(f"Daily Performance for **{proj_name}** - Upload your data file below.")
         uploaded = st.file_uploader("Upload daily data file (CSV or Excel)", type=["csv","xlsx","xls"])
@@ -931,21 +931,21 @@ def show_daily():
 
     sub_tabs = st.tabs([dp_label, wd_label])
 
-    # ── DEPOSIT TAB ──
+    # ââ DEPOSIT TAB ââ
     with sub_tabs[0]:
         col1, col2 = st.columns([3, 1])
         with col1:
             date_from = st.date_input("Date From", value=datetime.date.today().replace(day=1), key="dp_date_from")
             date_to = st.date_input("Date To", value=datetime.date.today(), key="dp_date_to")
         with col2:
-            st.markdown("**Upload Deposit File** *(optional — auto-loads from Supabase)*")
+            st.markdown("**Upload Deposit File** *(optional â auto-loads from Supabase)*")
             dp_file = st.file_uploader("Upload CSV/Excel", type=["csv","xlsx","xls"], key="dp_upload")
 
         df_dp = None
         if dp_file:
             df_dp = load_uploaded_file(dp_file)
             if df_dp is not None:
-                st.success(f"File loaded: {len(df_dp):,} rows × {len(df_dp.columns)} columns")
+                st.success(f"File loaded: {len(df_dp):,} rows Ã {len(df_dp.columns)} columns")
                 st.session_state["dp_data_raw"] = df_dp
                 st.session_state["dp_project"] = proj_code
         else:
@@ -964,10 +964,10 @@ def show_daily():
                 try:
                     dates = pd.to_datetime(df_dp[date_col], errors="coerce").dropna()
                     if len(dates) > 0:
-                        date_label = f" ( {dates.min().strftime('%Y-%m-%d')} — {dates.max().strftime('%Y-%m-%d')} )"
+                        date_label = f" ( {dates.min().strftime('%Y-%m-%d')} â {dates.max().strftime('%Y-%m-%d')} )"
                 except:
                     pass
-            res = compute_agent_summary_daily(df_dp, [dp_merchant], "deposit")
+            res = compute_agent_summary_daily(df_dp, dp_merchants, "deposit")
             if res and res[0]:
                 rows_dp, totals_dp = res
                 render_agent_table_daily(rows_dp, totals_dp, f"{dp_title}{date_label}", "deposit")
@@ -976,12 +976,12 @@ def show_daily():
                 st.download_button("Download Summary CSV", csv_buf.getvalue(), f"deposit_summary_{date_from}.csv", "text/csv")
             else:
                 alt_m = {"JP-JWINR": ["JP-INR", "JPINR", "JP INR", "JP"], "VF": ["VF-INR", "VFINR"]}
-                res2 = compute_agent_summary_daily(df_dp, alt_m.get(dp_merchant, []), "deposit")
+                res2 = compute_agent_summary_daily(df_dp, [], "deposit")
                 if res2 and res2[0]:
                     rows_dp, totals_dp = res2
                     render_agent_table_daily(rows_dp, totals_dp, f"{dp_title}{date_label}", "deposit")
                 else:
-                    st.warning(f"No deposit data found for merchant '{dp_merchant}'. Check your file columns.")
+                    st.warning(f"No deposit data found. Check your file columns.. Check your file columns.")
                     col_m = _find_col_ar(df_dp, "merchant", "team", "merchant_name", "project")
                     col_t = _find_col_ar(df_dp, "type", "transaction_type", "tx_type")
                     if col_m:
@@ -992,21 +992,21 @@ def show_daily():
             st.info("Upload a deposit data file (CSV or Excel) to generate the summary table.")
             st.markdown("**Expected columns:** Agent Group, DP Count, DP Amount, ROP Count, ROP Amount, Processing Time, Status, Fail Amount, Failed Payment")
 
-    # ── WITHDRAW TAB ──
+    # ââ WITHDRAW TAB ââ
     with sub_tabs[1]:
         col1, col2 = st.columns([3, 1])
         with col1:
             wd_date_from = st.date_input("Date From", value=datetime.date.today().replace(day=1), key="wd_date_from")
             wd_date_to = st.date_input("Date To", value=datetime.date.today(), key="wd_date_to")
         with col2:
-            st.markdown("**Upload Withdraw File** *(optional — auto-loads from Supabase)*")
+            st.markdown("**Upload Withdraw File** *(optional â auto-loads from Supabase)*")
             wd_file = st.file_uploader("Upload CSV/Excel", type=["csv","xlsx","xls"], key="wd_upload")
 
         df_wd = None
         if wd_file:
             df_wd = load_uploaded_file(wd_file)
             if df_wd is not None:
-                st.success(f"File loaded: {len(df_wd):,} rows × {len(df_wd.columns)} columns")
+                st.success(f"File loaded: {len(df_wd):,} rows Ã {len(df_wd.columns)} columns")
                 st.session_state["wd_data_raw"] = df_wd
                 st.session_state["wd_project"] = proj_code
         else:
@@ -1025,10 +1025,10 @@ def show_daily():
                 try:
                     dates_wd = pd.to_datetime(df_wd[date_col_wd], errors="coerce").dropna()
                     if len(dates_wd) > 0:
-                        date_label_wd = f" ( {dates_wd.min().strftime('%Y-%m-%d')} — {dates_wd.max().strftime('%Y-%m-%d')} )"
+                        date_label_wd = f" ( {dates_wd.min().strftime('%Y-%m-%d')} â {dates_wd.max().strftime('%Y-%m-%d')} )"
                 except:
                     pass
-            res_wd = compute_agent_summary_daily(df_wd, [wd_merchant], "withdraw")
+            res_wd = compute_agent_summary_daily(df_wd, wd_merchants, "withdraw")
             if res_wd and res_wd[0]:
                 rows_wd, totals_wd = res_wd
                 render_agent_table_daily(rows_wd, totals_wd, f"{wd_title}{date_label_wd}", "withdraw")
@@ -1037,12 +1037,12 @@ def show_daily():
                 st.download_button("Download Summary CSV", csv_buf_wd.getvalue(), f"withdraw_summary_{wd_date_from}.csv", "text/csv")
             else:
                 alt_m_wd = {"JP-JWINR": ["JP-INR", "JPINR", "JP INR", "JP"], "VF": ["VF-INR", "VFINR"]}
-                res_wd2 = compute_agent_summary_daily(df_wd, alt_m_wd.get(wd_merchant, []), "withdraw")
+                res_wd2 = compute_agent_summary_daily(df_wd, [], "withdraw")
                 if res_wd2 and res_wd2[0]:
                     rows_wd, totals_wd = res_wd2
                     render_agent_table_daily(rows_wd, totals_wd, f"{wd_title}{date_label_wd}", "withdraw")
                 else:
-                    st.warning(f"No withdraw data found for merchant '{wd_merchant}'. Check your file columns.")
+                    st.warning(f"No withdraw data found. Check your file columns.. Check your file columns.")
                     col_m_wd = _find_col_ar(df_wd, "merchant", "team", "merchant_name", "project")
                     col_t_wd = _find_col_ar(df_wd, "type", "transaction_type", "tx_type")
                     if col_m_wd:
@@ -1068,7 +1068,7 @@ def show_reports():
         report_tabs = st.tabs(["Commission Report Summary", "All Reports"])
         
         with report_tabs[0]:
-            st.markdown(f"### Commission Report Summary â {proj_name}")
+            st.markdown(f"### Commission Report Summary Ã¢ÂÂ {proj_name}")
             st.info("This report computes agent commissions based on Deposit and Withdraw data. Upload both files or use data from the Daily Performance tab.")
             
             col1, col2 = st.columns(2)
@@ -1106,7 +1106,7 @@ def show_reports():
                     
                     if commission_df is not None:
                         date_str = f"{date_from_r.strftime('%Y-%m-%d')} to {date_to_r.strftime('%Y-%m-%d')}"
-                        st.markdown(f"### Commission Summary â {proj_name} ({date_str})")
+                        st.markdown(f"### Commission Summary Ã¢ÂÂ {proj_name} ({date_str})")
                         
                         # Highlight totals row
                         def highlight_totals(row):
@@ -1150,7 +1150,7 @@ def show_reports():
                 reports = sb.table("reports").select("*").eq("project_id", pid).order("created_at", desc=True).execute()
                 if reports.data:
                     for r in reports.data:
-                        with st.expander(f"{r.get('title','Report')} â {r.get('report_date','')[:10]}"):
+                        with st.expander(f"{r.get('title','Report')} Ã¢ÂÂ {r.get('report_date','')[:10]}"):
                             st.write(f"Type: {r.get('report_type','')} | Created: {r.get('created_at','')[:10]}")
                             if r.get("html_content"):
                                 st.download_button("Download HTML", r["html_content"], f"report_{r['id'][:8]}.html", "text/html", key=f"dl_{r['id']}")
@@ -1159,7 +1159,7 @@ def show_reports():
             except Exception as e:
                 st.error(f"Error: {e}")
     else:
-        st.info(f"Reports for **{proj_name}** â coming soon.")
+        st.info(f"Reports for **{proj_name}** Ã¢ÂÂ coming soon.")
 
 # PLACEHOLDERS
 def show_recon():
