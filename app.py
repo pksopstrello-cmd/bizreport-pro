@@ -16,13 +16,13 @@ st.markdown("""<style>
 .rop-col{background-color:#f0a500!important;color:white!important;}
 </style>""", unsafe_allow_html=True)
 
-# Ã¢ÂÂÃ¢ÂÂ TABLE MAP Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+# ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ TABLE MAP ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ
 # profiles   : id, username, full_name, role, is_approved, is_active, totp_secret, totp_enabled, temp_code, temp_code_exp
 # projects   : id, name, code, description, is_active
 # permissions: id, user_id, project_id, module, can_view, can_upload, can_download
 # uploads    : id, project_id, uploaded_by, filename, original_filename, file_type, file_size, file_url, module, description, created_at
 # reports    : id, project_id, generated_by, title, report_type, report_date, summary_data, html_content, file_url, created_at
-# Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+# ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ
 
 # COMMISSION RATES (JP JW INR & PredictGo VF-INR)
 COMMISSION_RATES = {
@@ -220,9 +220,9 @@ def show_uploads():
             except Exception as e:
                 st.error(f"Error uploading {f.name}: {e}")
 
-# Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+# ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ
 # DAILY PERFORMANCE HELPERS
-# Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+# ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ
 
 def parse_time_to_seconds(t):
     """Convert HH:MM:SS or MM:SS string to total seconds."""
@@ -490,9 +490,9 @@ def display_summary_table(df, title, color="#f0a500"):
     st.dataframe(display_df, use_container_width=True, height=500)
 
 
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 # AGENT REPORT HELPERS (shared by Daily Performance)
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 
 @st.cache_data(ttl=300)
 def load_project_file_app(project_id):
@@ -578,7 +578,7 @@ def _pt_bucket_ar(sec):
 
 
 _PT_COLS_AR = ["le1", "1to3", "3to5", "5to10", "10to15", "15to30", "30to60", "gt1hr"]
-_PT_LABELS_AR = ["â¤1 Min", "1-3 Mins", "3-5 Mins", "5-10 Mins", "10-15 Mins", "15-30 Mins", "30-60 Mins", ">1 Hr"]
+_PT_LABELS_AR = ["Ã¢ÂÂ¤1 Min", "1-3 Mins", "3-5 Mins", "5-10 Mins", "10-15 Mins", "15-30 Mins", "30-60 Mins", ">1 Hr"]
 _AGENTS_ORDER_AR = [
     "apluspay-wake", "expay", "kingpay", "kingpayWD", "okpay", "oxpay",
     "paypay", "paypay-wake", "simplypay", "smilepayz", "vvpay", "yfrdnqpay-wake"
@@ -616,9 +616,9 @@ def compute_agent_summary_daily(df, merchant_filter, tx_type_filter):
         kw = tx_type_filter.lower()
         type_series = d[col_type].astype(str).str.lower().str.strip()
         if kw == "deposit":
-            mask_t = type_series.str.startswith("dep") | (type_series == "d") | type_series.str.contains("^deposit")
+            mask_t = (type_series.str.startswith("dep") | (type_series == "d") | type_series.str.contains("^deposit")) & ~type_series.str.contains("revert")
         else:
-            mask_t = type_series.str.startswith("with") | type_series.str.startswith("wd") | (type_series == "w") | type_series.str.contains("^withdraw")
+            mask_t = (type_series.str.startswith("with") | type_series.str.startswith("wd") | (type_series == "w") | type_series.str.contains("^withdraw")) & ~type_series.str.contains("revert")
         d = d[mask_t]
     if d.empty:
         return None, None
@@ -801,7 +801,7 @@ def render_agent_table_daily(rows, totals_info, title, tx_type="deposit"):
         display_rows.append(gr)
         row_styles.append("group")
         gt = dict(gr)
-        gt["Agent Group"] = f"â³ {grp} Total"
+        gt["Agent Group"] = f"Ã¢ÂÂ³ {grp} Total"
         gt["#"] = str(_GROUPS_AR.index(grp) + 2)
         display_rows.append(gt)
         row_styles.append("group_total")
@@ -837,7 +837,7 @@ def render_agent_table_daily(rows, totals_info, title, tx_type="deposit"):
     auto_pct_c = len(auto_d) / all_count * 100 if all_count else 0
     auto_pct_a = tot_auto_amt / all_amount * 100 if all_amount else 0
     auto_row = make_row(
-        f"â¢ Auto (Normal {cnt_lbl})", len(auto_d), tot_auto_amt, 0, 0,
+        f"Ã¢ÂÂ¢ Auto (Normal {cnt_lbl})", len(auto_d), tot_auto_amt, 0, 0,
         auto_pct_c, auto_pct_a,
         all_auto_pt.mean() if len(all_auto_pt) > 0 else np.nan,
         all_auto_pt.min() if len(all_auto_pt) > 0 else np.nan,
@@ -850,7 +850,7 @@ def render_agent_table_daily(rows, totals_info, title, tx_type="deposit"):
     man_pct_c = len(manual_d) / all_count * 100 if all_count else 0
     man_pct_a = tot_manual_amt / all_amount * 100 if all_amount else 0
     man_row = make_row(
-        f"â¢ Manual (M{cnt_lbl})", len(manual_d), tot_manual_amt, 0, 0,
+        f"Ã¢ÂÂ¢ Manual (M{cnt_lbl})", len(manual_d), tot_manual_amt, 0, 0,
         man_pct_c, man_pct_a, np.nan, np.nan, np.nan,
         {b: 0 for b in _PT_COLS_AR}, np.nan, np.nan, np.nan, np.nan,
         100.0 if len(manual_d) == 0 else np.nan
@@ -892,9 +892,9 @@ def render_agent_table_daily(rows, totals_info, title, tx_type="deposit"):
     st.dataframe(styled, use_container_width=True, hide_index=True)
 
 
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 # DAILY PERFORMANCE
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 def show_daily():
     st.markdown("## Daily Performance")
     project = project_selector()
@@ -931,21 +931,21 @@ def show_daily():
 
     sub_tabs = st.tabs([dp_label, wd_label])
 
-    # ââ DEPOSIT TAB ââ
+    # Ã¢ÂÂÃ¢ÂÂ DEPOSIT TAB Ã¢ÂÂÃ¢ÂÂ
     with sub_tabs[0]:
         col1, col2 = st.columns([3, 1])
         with col1:
             date_from = st.date_input("Date From", value=datetime.date.today().replace(day=1), key="dp_date_from")
             date_to = st.date_input("Date To", value=datetime.date.today(), key="dp_date_to")
         with col2:
-            st.markdown("**Upload Deposit File** *(optional â auto-loads from Supabase)*")
+            st.markdown("**Upload Deposit File** *(optional Ã¢ÂÂ auto-loads from Supabase)*")
             dp_file = st.file_uploader("Upload CSV/Excel", type=["csv","xlsx","xls"], key="dp_upload")
 
         df_dp = None
         if dp_file:
             df_dp = load_uploaded_file(dp_file)
             if df_dp is not None:
-                st.success(f"File loaded: {len(df_dp):,} rows Ã {len(df_dp.columns)} columns")
+                st.success(f"File loaded: {len(df_dp):,} rows ÃÂ {len(df_dp.columns)} columns")
                 st.session_state["dp_data_raw"] = df_dp
                 st.session_state["dp_project"] = proj_code
         else:
@@ -964,7 +964,7 @@ def show_daily():
                 try:
                     dates = pd.to_datetime(df_dp[date_col], errors="coerce").dropna()
                     if len(dates) > 0:
-                        date_label = f" ( {dates.min().strftime('%Y-%m-%d')} â {dates.max().strftime('%Y-%m-%d')} )"
+                        date_label = f" ( {dates.min().strftime('%Y-%m-%d')} Ã¢ÂÂ {dates.max().strftime('%Y-%m-%d')} )"
                 except:
                     pass
             res = compute_agent_summary_daily(df_dp, dp_merchants, "deposit")
@@ -992,21 +992,21 @@ def show_daily():
             st.info("Upload a deposit data file (CSV or Excel) to generate the summary table.")
             st.markdown("**Expected columns:** Agent Group, DP Count, DP Amount, ROP Count, ROP Amount, Processing Time, Status, Fail Amount, Failed Payment")
 
-    # ââ WITHDRAW TAB ââ
+    # Ã¢ÂÂÃ¢ÂÂ WITHDRAW TAB Ã¢ÂÂÃ¢ÂÂ
     with sub_tabs[1]:
         col1, col2 = st.columns([3, 1])
         with col1:
             wd_date_from = st.date_input("Date From", value=datetime.date.today().replace(day=1), key="wd_date_from")
             wd_date_to = st.date_input("Date To", value=datetime.date.today(), key="wd_date_to")
         with col2:
-            st.markdown("**Upload Withdraw File** *(optional â auto-loads from Supabase)*")
+            st.markdown("**Upload Withdraw File** *(optional Ã¢ÂÂ auto-loads from Supabase)*")
             wd_file = st.file_uploader("Upload CSV/Excel", type=["csv","xlsx","xls"], key="wd_upload")
 
         df_wd = None
         if wd_file:
             df_wd = load_uploaded_file(wd_file)
             if df_wd is not None:
-                st.success(f"File loaded: {len(df_wd):,} rows Ã {len(df_wd.columns)} columns")
+                st.success(f"File loaded: {len(df_wd):,} rows ÃÂ {len(df_wd.columns)} columns")
                 st.session_state["wd_data_raw"] = df_wd
                 st.session_state["wd_project"] = proj_code
         else:
@@ -1025,7 +1025,7 @@ def show_daily():
                 try:
                     dates_wd = pd.to_datetime(df_wd[date_col_wd], errors="coerce").dropna()
                     if len(dates_wd) > 0:
-                        date_label_wd = f" ( {dates_wd.min().strftime('%Y-%m-%d')} â {dates_wd.max().strftime('%Y-%m-%d')} )"
+                        date_label_wd = f" ( {dates_wd.min().strftime('%Y-%m-%d')} Ã¢ÂÂ {dates_wd.max().strftime('%Y-%m-%d')} )"
                 except:
                     pass
             res_wd = compute_agent_summary_daily(df_wd, wd_merchants, "withdraw")
@@ -1068,7 +1068,7 @@ def show_reports():
         report_tabs = st.tabs(["Commission Report Summary", "All Reports"])
         
         with report_tabs[0]:
-            st.markdown(f"### Commission Report Summary Ã¢ÂÂ {proj_name}")
+            st.markdown(f"### Commission Report Summary ÃÂ¢ÃÂÃÂ {proj_name}")
             st.info("This report computes agent commissions based on Deposit and Withdraw data. Upload both files or use data from the Daily Performance tab.")
             
             col1, col2 = st.columns(2)
@@ -1106,7 +1106,7 @@ def show_reports():
                     
                     if commission_df is not None:
                         date_str = f"{date_from_r.strftime('%Y-%m-%d')} to {date_to_r.strftime('%Y-%m-%d')}"
-                        st.markdown(f"### Commission Summary Ã¢ÂÂ {proj_name} ({date_str})")
+                        st.markdown(f"### Commission Summary ÃÂ¢ÃÂÃÂ {proj_name} ({date_str})")
                         
                         # Highlight totals row
                         def highlight_totals(row):
@@ -1150,7 +1150,7 @@ def show_reports():
                 reports = sb.table("reports").select("*").eq("project_id", pid).order("created_at", desc=True).execute()
                 if reports.data:
                     for r in reports.data:
-                        with st.expander(f"{r.get('title','Report')} Ã¢ÂÂ {r.get('report_date','')[:10]}"):
+                        with st.expander(f"{r.get('title','Report')} ÃÂ¢ÃÂÃÂ {r.get('report_date','')[:10]}"):
                             st.write(f"Type: {r.get('report_type','')} | Created: {r.get('created_at','')[:10]}")
                             if r.get("html_content"):
                                 st.download_button("Download HTML", r["html_content"], f"report_{r['id'][:8]}.html", "text/html", key=f"dl_{r['id']}")
@@ -1159,7 +1159,7 @@ def show_reports():
             except Exception as e:
                 st.error(f"Error: {e}")
     else:
-        st.info(f"Reports for **{proj_name}** Ã¢ÂÂ coming soon.")
+        st.info(f"Reports for **{proj_name}** ÃÂ¢ÃÂÃÂ coming soon.")
 
 # PLACEHOLDERS
 def show_recon():
