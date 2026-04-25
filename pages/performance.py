@@ -4,7 +4,21 @@ import numpy as np
 import io
 from datetime import datetime
 from utils.supabase_client import get_supabase
-from modules.dashboard import project_selector
+# Project selector is embedded (not imported from modules.dashboard)
+def project_selector():
+    try:
+        sb = get_supabase()
+        res = sb.table("projects").select("id,name,code,description").eq("is_active", True).order("name").execute()
+        projects = res.data or []
+    except Exception as e:
+        st.error(f"Could not load projects: {e}")
+        return None
+    if not projects:
+        st.warning("No projects found.")
+        return None
+    names = [p["name"] for p in projects]
+    sel = st.selectbox("Project", names, key="perf_project_sel")
+    return next((p for p in projects if p["name"] == sel), None)
 
 st.set_page_config(page_title="Performance", layout="wide")
 
