@@ -16,13 +16,13 @@ st.markdown("""<style>
 .rop-col{background-color:#f0a500!important;color:white!important;}
 </style>""", unsafe_allow_html=True)
 
-# ── TABLE MAP ─────────────────────────────
+# ââ TABLE MAP âââââââââââââââââââââââââââââ
 # profiles   : id, username, full_name, role, is_approved, is_active, totp_secret, totp_enabled, temp_code, temp_code_exp
 # projects   : id, name, code, description, is_active
 # permissions: id, user_id, project_id, module, can_view, can_upload, can_download
 # uploads    : id, project_id, uploaded_by, filename, original_filename, file_type, file_size, file_url, module, description, created_at
 # reports    : id, project_id, generated_by, title, report_type, report_date, summary_data, html_content, file_url, created_at
-# ─────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââ
 
 # COMMISSION RATES (JP JW INR & PredictGo VF-INR)
 COMMISSION_RATES = {
@@ -220,9 +220,9 @@ def show_uploads():
             except Exception as e:
                 st.error(f"Error uploading {f.name}: {e}")
 
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 # DAILY PERFORMANCE HELPERS
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 def parse_time_to_seconds(t):
     """Convert HH:MM:SS or MM:SS string to total seconds."""
@@ -489,6 +489,409 @@ def display_summary_table(df, title, color="#f0a500"):
             display_df[col] = display_df[col].apply(lambda x: f"{x:,}" if pd.notna(x) else "-")
     st.dataframe(display_df, use_container_width=True, height=500)
 
+
+# ─────────────────────────────────────────────────────────────
+# AGENT REPORT HELPERS (shared by Daily Performance)
+# ─────────────────────────────────────────────────────────────
+
+@st.cache_data(ttl=300)
+def load_project_file_app(project_id):
+    try:
+        sb = get_supabase()
+        res = sb.table("uploads").select("file_url,filename,created_at").eq("project_id", project_id).order("created_at", desc=True).limit(1).execute()
+        if not res.data:
+            return None, "No uploaded file found for this project."
+        row = res.data[0]
+        file_url = row["file_url"]
+        fname = row.get("filename", "file")
+        raw = sb.storage.from_("uploads").download(file_url)
+        if fname.endswith(".csv"):
+            df = pd.read_csv(io.BytesIO(raw), low_memory=False)
+        else:
+            df = pd.read_excel(io.BytesIO(raw))
+        df.columns = [str(c).strip() for c in df.columns]
+        return df, None
+    except Exception as e:
+        return None, str(e)
+
+
+def _find_col_ar(df, *candidates):
+    norm = {c.lower().replace(" ", "_").replace("-", "_"): c for c in df.columns}
+    for cand in candidates:
+        k = cand.lower().replace(" ", "_").replace("-", "_")
+        if k in norm:
+            return norm[k]
+    return None
+
+
+def _to_seconds_ar(val):
+    if pd.isna(val) or val in ("", "-", "N/A", None):
+        return np.nan
+    s = str(val).strip()
+    try:
+        parts = s.split(":")
+        if len(parts) == 3:
+            return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+        if len(parts) == 2:
+            return int(parts[0]) * 60 + float(parts[1])
+        return float(s)
+    except:
+        return np.nan
+
+
+def _fmt_hms_ar(sec):
+    if pd.isna(sec):
+        return "-"
+    sec = int(sec)
+    h, rem = divmod(sec, 3600)
+    m, s = divmod(rem, 60)
+    if h > 0:
+        return f"{h}:{m:02d}:{s:02d}"
+    return f"0:{m:02d}:{s:02d}"
+
+
+def _fmt_num_ar(v, dec=0):
+    if pd.isna(v) or v == 0:
+        return "-"
+    if dec == 0:
+        return f"{int(v):,}"
+    return f"{v:,.{dec}f}"
+
+
+def _fmt_pct_ar(v):
+    if pd.isna(v):
+        return "-"
+    return f"{v:.2f}%"
+
+
+def _pt_bucket_ar(sec):
+    if pd.isna(sec):
+        return None
+    if sec <= 60:   return "le1"
+    if sec <= 180:  return "1to3"
+    if sec <= 300:  return "3to5"
+    if sec <= 600:  return "5to10"
+    if sec <= 900:  return "10to15"
+    if sec <= 1800: return "15to30"
+    if sec <= 3600: return "30to60"
+    return "gt1hr"
+
+
+_PT_COLS_AR = ["le1", "1to3", "3to5", "5to10", "10to15", "15to30", "30to60", "gt1hr"]
+_PT_LABELS_AR = ["≤1 Min", "1-3 Mins", "3-5 Mins", "5-10 Mins", "10-15 Mins", "15-30 Mins", "30-60 Mins", ">1 Hr"]
+_AGENTS_ORDER_AR = [
+    "apluspay-wake", "expay", "kingpay", "kingpayWD", "okpay", "oxpay",
+    "paypay", "paypay-wake", "simplypay", "smilepayz", "vvpay", "yfrdnqpay-wake"
+]
+_GROUP_MAP_AR = {
+    "apluspay-wake": "KS Group", "expay": "KS Group",
+    "kingpay": "Ma Group", "kingpayWD": "Ma Group",
+    "okpay": "Ma Group", "oxpay": "Ma Group",
+    "paypay": "JKPAY Group", "paypay-wake": "JKPAY Group",
+    "simplypay": "JKPAY Group", "smilepayz": "JKPAY Group",
+    "vvpay": "JKPAY Group", "yfrdnqpay-wake": "JKPAY Group",
+}
+_GROUPS_AR = ["KS Group", "Ma Group", "JKPAY Group"]
+_SUCCESS_VALS_AR = {"success", "successful", "1", "true", "yes", "completed", "approved", "1.0"}
+
+
+def compute_agent_summary_daily(df, merchant_filter, tx_type_filter):
+    d = df.copy()
+    col_merchant = _find_col_ar(d, "merchant", "team", "agent_team", "merchant_name", "project", "channel")
+    col_type = _find_col_ar(d, "type", "transaction_type", "tx_type", "order_type")
+    col_agent = _find_col_ar(d, "agent_group", "agent", "agent_name", "agentgroup", "pay_agent")
+    col_amount = _find_col_ar(d, "amount", "dp_amount", "wd_amount", "order_amount", "pay_amount")
+    col_status = _find_col_ar(d, "status", "transaction_status", "order_status", "result", "is_success")
+    col_pt = _find_col_ar(d, "processing_time", "pt", "auto_pt", "avg_pt", "response_time", "duration")
+    col_rdp = _find_col_ar(d, "rdp_count", "rop_count", "rwd_count", "mwd_count", "mdp_count", "manual_count", "is_manual", "is_rdp", "is_rwd")
+    col_rdp_amt = _find_col_ar(d, "rdp_amount", "rop_amount", "rwd_amount", "mwd_amount", "mdp_amount", "manual_amount")
+    col_fail_amt = _find_col_ar(d, "fail_amount", "failed_amount", "fail amount")
+    col_fail_agent = _find_col_ar(d, "failed_agent", "fail_agent")
+    col_cpf = _find_col_ar(d, "create_payment_failed", "cpf")
+    col_fp = _find_col_ar(d, "failed_payment", "fail_payment")
+    if col_merchant and merchant_filter:
+        mask_m = d[col_merchant].astype(str).str.upper().isin([m.upper() for m in merchant_filter])
+        d = d[mask_m]
+    if col_type and tx_type_filter:
+        kw = tx_type_filter.lower()
+        type_series = d[col_type].astype(str).str.lower().str.strip()
+        if kw == "deposit":
+            mask_t = type_series.str.startswith("dep") | (type_series == "d") | type_series.str.contains("^deposit")
+        else:
+            mask_t = type_series.str.startswith("with") | type_series.str.startswith("wd") | (type_series == "w") | type_series.str.contains("^withdraw")
+        d = d[mask_t]
+    if d.empty:
+        return None, None
+    if col_rdp:
+        rdp_vals = d[col_rdp].astype(str).str.lower()
+        is_manual = rdp_vals.isin(["1", "true", "yes", "rdp", "rwd", "manual", "1.0"])
+        if is_manual.sum() == 0:
+            is_manual = d[col_rdp].fillna(0).astype(float) > 0
+    else:
+        is_manual = pd.Series(False, index=d.index)
+    if col_pt:
+        d["_pt_sec"] = d[col_pt].apply(_to_seconds_ar)
+    else:
+        d["_pt_sec"] = np.nan
+    if col_status:
+        d["_success"] = d[col_status].astype(str).str.lower().str.strip().isin(_SUCCESS_VALS_AR)
+    else:
+        d["_success"] = False
+    if not col_agent:
+        return None, None
+    d["_agent_norm"] = d[col_agent].astype(str).str.strip().str.lower()
+    all_count = len(d)
+    all_amount = pd.to_numeric(d[col_amount], errors="coerce").sum() if col_amount else 0
+    rows = []
+    for agent in _AGENTS_ORDER_AR:
+        mask = d["_agent_norm"] == agent.lower()
+        ag = d[mask]
+        ag_auto = ag[~is_manual[mask]]
+        ag_manual = ag[is_manual[mask]]
+        count = len(ag)
+        amount = pd.to_numeric(ag[col_amount], errors="coerce").sum() if col_amount else 0
+        rdp_c = int(ag_manual["_agent_norm"].count()) if len(ag_manual) > 0 else 0
+        if col_rdp_amt:
+            rdp_a = pd.to_numeric(ag_manual[col_rdp_amt], errors="coerce").sum()
+        elif col_amount:
+            rdp_a = pd.to_numeric(ag_manual[col_amount], errors="coerce").sum()
+        else:
+            rdp_a = 0
+        rdp_a = rdp_a if rdp_c > 0 else 0
+        cnt_pct = (count / all_count * 100) if all_count > 0 else 0
+        amt_pct = (amount / all_amount * 100) if all_amount > 0 else 0
+        auto_pt = ag_auto["_pt_sec"].dropna()
+        avg_pt = auto_pt.mean() if len(auto_pt) > 0 else np.nan
+        min_pt = auto_pt.min() if len(auto_pt) > 0 else np.nan
+        max_pt = auto_pt.max() if len(auto_pt) > 0 else np.nan
+        buckets = {b: 0 for b in _PT_COLS_AR}
+        for sec in auto_pt:
+            b = _pt_bucket_ar(sec)
+            if b:
+                buckets[b] += 1
+        fail_amt = pd.to_numeric(ag[col_fail_amt], errors="coerce").sum() if col_fail_amt else 0
+        fail_ag = ag[col_fail_agent].nunique() if col_fail_agent else 0
+        cpf = pd.to_numeric(ag[col_cpf], errors="coerce").sum() if col_cpf else 0
+        fp = pd.to_numeric(ag[col_fp], errors="coerce").sum() if col_fp else 0
+        suc_rate = (ag["_success"].sum() / count * 100) if count > 0 else 0
+        rows.append({
+            "agent": agent, "count": count, "amount": amount,
+            "rdp_c": rdp_c, "rdp_a": rdp_a, "cnt_pct": cnt_pct, "amt_pct": amt_pct,
+            "avg_pt": avg_pt, "min_pt": min_pt, "max_pt": max_pt,
+            **{f"pt_{b}": buckets[b] for b in _PT_COLS_AR},
+            "fail_amt": fail_amt, "fail_ag": int(fail_ag), "cpf": cpf, "fp": fp,
+            "suc_rate": suc_rate,
+            "auto_count": len(ag_auto),
+            "auto_amount": pd.to_numeric(ag_auto[col_amount], errors="coerce").sum() if col_amount else 0,
+            "manual_count": len(ag_manual),
+            "manual_amount": pd.to_numeric(ag_manual[col_amount], errors="coerce").sum() if col_amount else 0,
+        })
+    return rows, {
+        "all_count": all_count, "all_amount": all_amount,
+        "is_manual": is_manual, "d": d,
+        "col_amount": col_amount, "col_fail_amt": col_fail_amt,
+        "col_fail_agent": col_fail_agent, "col_cpf": col_cpf,
+        "col_fp": col_fp, "col_rdp": col_rdp, "col_rdp_amt": col_rdp_amt,
+    }
+
+
+def render_agent_table_daily(rows, totals_info, title, tx_type="deposit"):
+    if not rows:
+        st.info(f"No data found for {title}")
+        return
+    is_dp = "deposit" in tx_type.lower()
+    rdp_lbl = "RDP" if is_dp else "RWD"
+    cnt_lbl = "DP" if is_dp else "WD"
+    d = totals_info["d"]
+    is_manual = totals_info["is_manual"]
+    all_count = totals_info["all_count"]
+    all_amount = totals_info["all_amount"]
+    col_amount = totals_info["col_amount"]
+    col_fail_amt = totals_info["col_fail_amt"]
+    col_fail_agent = totals_info["col_fail_agent"]
+    col_cpf = totals_info["col_cpf"]
+    col_fp = totals_info["col_fp"]
+    group_rows = {}
+    for grp in _GROUPS_AR:
+        members = [a for a, g in _GROUP_MAP_AR.items() if g == grp]
+        grp_rows = [r for r in rows if r["agent"] in members]
+        if not grp_rows:
+            continue
+        gc = sum(r["count"] for r in grp_rows)
+        ga = sum(r["amount"] for r in grp_rows)
+        grc = sum(r["rdp_c"] for r in grp_rows)
+        gra = sum(r["rdp_a"] for r in grp_rows)
+        g_auto_pt = []
+        for ag_name in members:
+            mask = d["_agent_norm"] == ag_name.lower()
+            auto_mask = mask & ~is_manual
+            secs = d[auto_mask]["_pt_sec"].dropna().tolist()
+            g_auto_pt.extend(secs)
+        group_rows[grp] = {
+            "count": gc, "amount": ga, "rdp_c": grc, "rdp_a": gra,
+            "cnt_pct": gc / all_count * 100 if all_count else 0,
+            "amt_pct": ga / all_amount * 100 if all_amount else 0,
+            "avg_pt": np.mean(g_auto_pt) if g_auto_pt else np.nan,
+            "min_pt": np.min(g_auto_pt) if g_auto_pt else np.nan,
+            "max_pt": np.max(g_auto_pt) if g_auto_pt else np.nan,
+            **{f"pt_{b}": sum(r[f"pt_{b}"] for r in grp_rows) for b in _PT_COLS_AR},
+            "fail_amt": sum(r["fail_amt"] for r in grp_rows),
+            "fail_ag": sum(r["fail_ag"] for r in grp_rows),
+            "cpf": sum(r["cpf"] for r in grp_rows),
+            "fp": sum(r["fp"] for r in grp_rows),
+            "suc_rate": sum(r["suc_rate"] * r["count"] for r in grp_rows) / gc if gc > 0 else 0,
+        }
+    auto_d = d[~is_manual]
+    manual_d = d[is_manual]
+    all_auto_pt = d[~is_manual]["_pt_sec"].dropna()
+    tot_rdp_c = sum(r["rdp_c"] for r in rows)
+    tot_rdp_a = sum(r["rdp_a"] for r in rows)
+    tot_fail_amt = pd.to_numeric(d[col_fail_amt], errors="coerce").sum() if col_fail_amt else 0
+    tot_fail_ag = d[col_fail_agent].nunique() if col_fail_agent else 0
+    tot_cpf = pd.to_numeric(d[col_cpf], errors="coerce").sum() if col_cpf else 0
+    tot_fp = pd.to_numeric(d[col_fp], errors="coerce").sum() if col_fp else 0
+    tot_suc = d["_success"].sum()
+    tot_auto_amt = pd.to_numeric(auto_d[col_amount], errors="coerce").sum() if col_amount else 0
+    tot_manual_amt = pd.to_numeric(manual_d[col_amount], errors="coerce").sum() if col_amount else 0
+
+    def make_row(label, c, a, rc, ra, cp, ap, avg, mn, mx, bkts, fa, fag, cpf, fp, sr):
+        return {
+            "#": "-", "Agent Group": label,
+            f"Overall {cnt_lbl} Count": _fmt_num_ar(c),
+            f"Overall {cnt_lbl} Amount": _fmt_num_ar(a, 2),
+            f"{rdp_lbl} Count": _fmt_num_ar(rc) if rc > 0 else "-",
+            f"{rdp_lbl} Amount": _fmt_num_ar(ra, 2) if ra > 0 else "-",
+            f"{cnt_lbl} Count Contribution%": _fmt_pct_ar(cp),
+            f"{cnt_lbl} Amount Contribution%": _fmt_pct_ar(ap),
+            "Avg PT (Auto Only)": _fmt_hms_ar(avg),
+            "Min PT (Auto)": _fmt_hms_ar(mn),
+            "Max PT (Auto)": _fmt_hms_ar(mx),
+            **{_PT_LABELS_AR[i]: _fmt_num_ar(bkts.get(_PT_COLS_AR[i], 0)) for i in range(len(_PT_COLS_AR))},
+            "Fail Amount": _fmt_num_ar(fa, 2) if fa else "-",
+            "Failed Agent": _fmt_num_ar(fag) if fag else "-",
+            "Create Payment Failed": _fmt_num_ar(cpf) if cpf else "-",
+            "Failed Payment": _fmt_num_ar(fp) if fp else "-",
+            "Success Rate": _fmt_pct_ar(sr),
+        }
+
+    all_bkts = {b: sum(r[f"pt_{b}"] for r in rows) for b in _PT_COLS_AR}
+    display_rows = []
+    row_styles = []
+    top = make_row(
+        "JP AGENT", all_count, all_amount, tot_rdp_c, tot_rdp_a, 100.0, 100.0,
+        all_auto_pt.mean() if len(all_auto_pt) > 0 else np.nan,
+        all_auto_pt.min() if len(all_auto_pt) > 0 else np.nan,
+        all_auto_pt.max() if len(all_auto_pt) > 0 else np.nan,
+        all_bkts, tot_fail_amt, tot_fail_ag, tot_cpf, tot_fp,
+        tot_suc / all_count * 100 if all_count > 0 else 0
+    )
+    display_rows.append(top)
+    row_styles.append("top_total")
+    for grp in _GROUPS_AR:
+        if grp not in group_rows:
+            continue
+        g = group_rows[grp]
+        gr = make_row(
+            grp, g["count"], g["amount"], g["rdp_c"], g["rdp_a"],
+            g["cnt_pct"], g["amt_pct"], g["avg_pt"], g["min_pt"], g["max_pt"],
+            {b: g[f"pt_{b}"] for b in _PT_COLS_AR},
+            g["fail_amt"], g["fail_ag"], g["cpf"], g["fp"], g["suc_rate"]
+        )
+        gr["#"] = str(_GROUPS_AR.index(grp) + 1)
+        display_rows.append(gr)
+        row_styles.append("group")
+        gt = dict(gr)
+        gt["Agent Group"] = f"↳ {grp} Total"
+        gt["#"] = str(_GROUPS_AR.index(grp) + 2)
+        display_rows.append(gt)
+        row_styles.append("group_total")
+    acct = {"#": "7", "Agent Group": "Agent_Acct_WD"}
+    for k in display_rows[0]:
+        if k not in ("#", "Agent Group"):
+            acct[k] = "-"
+    display_rows.append(acct)
+    row_styles.append("normal")
+    r_idx = 8
+    for r in rows:
+        rd = make_row(
+            r["agent"], r["count"], r["amount"], r["rdp_c"], r["rdp_a"],
+            r["cnt_pct"], r["amt_pct"], r["avg_pt"], r["min_pt"], r["max_pt"],
+            {b: r[f"pt_{b}"] for b in _PT_COLS_AR},
+            r["fail_amt"], r["fail_ag"], r["cpf"], r["fp"], r["suc_rate"]
+        )
+        rd["#"] = str(r_idx)
+        r_idx += 1
+        display_rows.append(rd)
+        row_styles.append("normal")
+    tot_row = make_row(
+        "Total/Average", all_count, all_amount, tot_rdp_c, tot_rdp_a, 100.0, 100.0,
+        all_auto_pt.mean() if len(all_auto_pt) > 0 else np.nan,
+        all_auto_pt.min() if len(all_auto_pt) > 0 else np.nan,
+        all_auto_pt.max() if len(all_auto_pt) > 0 else np.nan,
+        all_bkts, tot_fail_amt, tot_fail_ag, tot_cpf, tot_fp,
+        tot_suc / all_count * 100 if all_count > 0 else 0
+    )
+    tot_row["#"] = "-"
+    display_rows.append(tot_row)
+    row_styles.append("total")
+    auto_pct_c = len(auto_d) / all_count * 100 if all_count else 0
+    auto_pct_a = tot_auto_amt / all_amount * 100 if all_amount else 0
+    auto_row = make_row(
+        f"• Auto (Normal {cnt_lbl})", len(auto_d), tot_auto_amt, 0, 0,
+        auto_pct_c, auto_pct_a,
+        all_auto_pt.mean() if len(all_auto_pt) > 0 else np.nan,
+        all_auto_pt.min() if len(all_auto_pt) > 0 else np.nan,
+        all_auto_pt.max() if len(all_auto_pt) > 0 else np.nan,
+        all_bkts, np.nan, np.nan, np.nan, np.nan, np.nan
+    )
+    auto_row["#"] = "L"
+    display_rows.append(auto_row)
+    row_styles.append("sub")
+    man_pct_c = len(manual_d) / all_count * 100 if all_count else 0
+    man_pct_a = tot_manual_amt / all_amount * 100 if all_amount else 0
+    man_row = make_row(
+        f"• Manual (M{cnt_lbl})", len(manual_d), tot_manual_amt, 0, 0,
+        man_pct_c, man_pct_a, np.nan, np.nan, np.nan,
+        {b: 0 for b in _PT_COLS_AR}, np.nan, np.nan, np.nan, np.nan,
+        100.0 if len(manual_d) == 0 else np.nan
+    )
+    man_row["#"] = "L"
+    man_row["Avg PT (Auto Only)"] = "-"
+    man_row["Min PT (Auto)"] = "N/A"
+    man_row["Max PT (Auto)"] = "N/A"
+    display_rows.append(man_row)
+    row_styles.append("sub")
+    df_out = pd.DataFrame(display_rows)
+    rdp_cols_styled = [f"{rdp_lbl} Count", f"{rdp_lbl} Amount"]
+
+    def style_row(row):
+        stype = row_styles[row.name] if row.name < len(row_styles) else "normal"
+        base = ""
+        if stype == "top_total":
+            base = "background-color:#1a1a2e;color:white;font-weight:bold;"
+        elif stype == "group":
+            base = "background-color:#FFFACD;color:#333;font-weight:bold;"
+        elif stype == "group_total":
+            base = "background-color:#E8F4FD;color:#333;"
+        elif stype == "total":
+            base = "background-color:#FFD700;color:#333;font-weight:bold;"
+        elif stype == "sub":
+            base = "background-color:#2a2a3e;color:#aaa;font-style:italic;"
+        styles = [base] * len(row)
+        for i, col in enumerate(df_out.columns):
+            if col in rdp_cols_styled:
+                styles[i] = "background-color:#FF8C00;color:white;font-weight:bold;"
+        return styles
+
+    st.markdown(
+        f'<div style="background:#E67E22;color:white;font-weight:bold;text-align:center;'
+        f'padding:8px;border-radius:4px;margin-bottom:4px;font-size:15px;">{title}</div>',
+        unsafe_allow_html=True
+    )
+    styled = df_out.style.apply(style_row, axis=1)
+    st.dataframe(styled, use_container_width=True, hide_index=True)
+
+
 # ─────────────────────────────────────────────────────────────
 # DAILY PERFORMANCE
 # ─────────────────────────────────────────────────────────────
@@ -497,21 +900,26 @@ def show_daily():
     project = project_selector()
     if not project:
         return
-    
+
     proj_code = project.get("code", "")
     proj_name = project.get("name", "")
-    
+    proj_id = project.get("id", "")
+
     # Only show sub-tabs for JP JW INR and PredictGo VF-INR
     if proj_code == "JP_JW_INR":
         dp_label = "JP-JWINR (Deposit)"
         wd_label = "DP-JWINR (Withdraw)"
         dp_title = "JP-JWINR Agent Deposit Data"
         wd_title = "JP-JWINR Agent Withdraw Data"
+        dp_merchant = "JP-JWINR"
+        wd_merchant = "JP-JWINR"
     elif proj_code == "PREDICTGO_VF_INR":
         dp_label = "PG-VFINR (Deposit)"
         wd_label = "PG-VFINR (Withdraw)"
         dp_title = "PredictGo VF-INR Agent Deposit Data"
         wd_title = "PredictGo VF-INR Agent Withdraw Data"
+        dp_merchant = "VF"
+        wd_merchant = "VF"
     else:
         st.info(f"Daily Performance for **{proj_name}** - Upload your data file below.")
         uploaded = st.file_uploader("Upload daily data file (CSV or Excel)", type=["csv","xlsx","xls"])
@@ -520,245 +928,132 @@ def show_daily():
             if df is not None:
                 st.dataframe(df, use_container_width=True)
         return
-    
+
     sub_tabs = st.tabs([dp_label, wd_label])
-    
+
     # ── DEPOSIT TAB ──
     with sub_tabs[0]:
-        st.markdown(f"### {dp_title}")
-        
         col1, col2 = st.columns([3, 1])
         with col1:
             date_from = st.date_input("Date From", value=datetime.date.today().replace(day=1), key="dp_date_from")
             date_to = st.date_input("Date To", value=datetime.date.today(), key="dp_date_to")
         with col2:
-            st.markdown("**Upload Deposit File**")
+            st.markdown("**Upload Deposit File** *(optional — auto-loads from Supabase)*")
             dp_file = st.file_uploader("Upload CSV/Excel", type=["csv","xlsx","xls"], key="dp_upload")
-        
+
+        df_dp = None
         if dp_file:
-            df_raw = load_uploaded_file(dp_file)
-            if df_raw is not None:
-                st.success(f"File loaded: {len(df_raw)} rows")
-                
-                # Store in session for commission calculation
-                st.session_state["dp_data_raw"] = df_raw
+            df_dp = load_uploaded_file(dp_file)
+            if df_dp is not None:
+                st.success(f"File loaded: {len(df_dp):,} rows × {len(df_dp.columns)} columns")
+                st.session_state["dp_data_raw"] = df_dp
                 st.session_state["dp_project"] = proj_code
-                
-                # Build and display summary
-                summary = build_deposit_summary(df_raw)
-                if summary is not None:
-                    date_str = f"{date_from.strftime('%Y-%m-%d')} - {date_to.strftime('%Y-%m-%d')}"
-                    st.markdown(f"**{dp_title} ({date_str})**")
-                    
-                    # Add totals row
-                    numeric_cols = summary.select_dtypes(include=[np.number]).columns
-                    total_row = {}
-                    for c in summary.columns:
-                        if c == "Agent Group":
-                            total_row[c] = "Total/Average"
-                        elif c in numeric_cols:
-                            total_row[c] = summary[c].sum()
-                        elif c in ["Avg PT","Min PT","Max PT"]:
-                            total_row[c] = "-"
-                        elif c.endswith("%"):
-                            total_row[c] = "100.00%"
-                        elif c == "Success Rate":
-                            # Recalculate overall
-                            try:
-                                total_dp = summary["DP Count"].sum()
-                                total_fail = summary["Failed Payment"].sum()
-                                total_row[c] = f"{((total_dp - total_fail) / total_dp * 100):.2f}%" if total_dp > 0 else "-"
-                            except:
-                                total_row[c] = "-"
-                        else:
-                            total_row[c] = "-"
-                    
-                    display_df = pd.concat([summary, pd.DataFrame([total_row])], ignore_index=True)
-                    display_summary_table(display_df, "")
-                    
-                    # Download button
-                    csv_buf = io.StringIO()
-                    display_df.to_csv(csv_buf, index=False)
-                    st.download_button("Download Summary CSV", csv_buf.getvalue(), f"deposit_summary_{date_from}.csv", "text/csv")
+        else:
+            with st.spinner("Loading data from Supabase..."):
+                df_dp, err = load_project_file_app(proj_id)
+            if err:
+                st.warning(f"Could not auto-load: {err}. Please upload a file manually.")
+            elif df_dp is not None and not df_dp.empty:
+                st.session_state["dp_data_raw"] = df_dp
+                st.session_state["dp_project"] = proj_code
+
+        if df_dp is not None and not df_dp.empty:
+            date_col = _find_col_ar(df_dp, "date", "created_at", "transaction_date", "tx_date", "order_date", "create_time")
+            date_label = ""
+            if date_col:
+                try:
+                    dates = pd.to_datetime(df_dp[date_col], errors="coerce").dropna()
+                    if len(dates) > 0:
+                        date_label = f" ( {dates.min().strftime('%Y-%m-%d')} — {dates.max().strftime('%Y-%m-%d')} )"
+                except:
+                    pass
+            res = compute_agent_summary_daily(df_dp, [dp_merchant], "deposit")
+            if res and res[0]:
+                rows_dp, totals_dp = res
+                render_agent_table_daily(rows_dp, totals_dp, f"{dp_title}{date_label}", "deposit")
+                csv_buf = io.StringIO()
+                pd.DataFrame(rows_dp).to_csv(csv_buf, index=False)
+                st.download_button("Download Summary CSV", csv_buf.getvalue(), f"deposit_summary_{date_from}.csv", "text/csv")
+            else:
+                alt_m = {"JP-JWINR": ["JP-INR", "JPINR", "JP INR", "JP"], "VF": ["VF-INR", "VFINR"]}
+                res2 = compute_agent_summary_daily(df_dp, alt_m.get(dp_merchant, []), "deposit")
+                if res2 and res2[0]:
+                    rows_dp, totals_dp = res2
+                    render_agent_table_daily(rows_dp, totals_dp, f"{dp_title}{date_label}", "deposit")
                 else:
-                    st.warning("Could not build summary. Please check your file has the required columns (Agent Group, DP Count, DP Amount, etc.)")
-                    st.markdown("**Raw Data Preview:**")
-                    st.dataframe(df_raw.head(20), use_container_width=True)
+                    st.warning(f"No deposit data found for merchant '{dp_merchant}'. Check your file columns.")
+                    col_m = _find_col_ar(df_dp, "merchant", "team", "merchant_name", "project")
+                    col_t = _find_col_ar(df_dp, "type", "transaction_type", "tx_type")
+                    if col_m:
+                        st.caption(f"Merchant values found: {list(df_dp[col_m].unique()[:20])}")
+                    if col_t:
+                        st.caption(f"Type values found: {list(df_dp[col_t].unique()[:20])}")
         else:
             st.info("Upload a deposit data file (CSV or Excel) to generate the summary table.")
             st.markdown("**Expected columns:** Agent Group, DP Count, DP Amount, ROP Count, ROP Amount, Processing Time, Status, Fail Amount, Failed Payment")
-    
+
     # ── WITHDRAW TAB ──
     with sub_tabs[1]:
-        st.markdown(f"### {wd_title}")
-        
         col1, col2 = st.columns([3, 1])
         with col1:
             wd_date_from = st.date_input("Date From", value=datetime.date.today().replace(day=1), key="wd_date_from")
             wd_date_to = st.date_input("Date To", value=datetime.date.today(), key="wd_date_to")
         with col2:
-            st.markdown("**Upload Withdraw File**")
+            st.markdown("**Upload Withdraw File** *(optional — auto-loads from Supabase)*")
             wd_file = st.file_uploader("Upload CSV/Excel", type=["csv","xlsx","xls"], key="wd_upload")
-        
+
+        df_wd = None
         if wd_file:
-            df_raw_wd = load_uploaded_file(wd_file)
-            if df_raw_wd is not None:
-                st.success(f"File loaded: {len(df_raw_wd)} rows")
-                
-                # Store for commission calculation
-                st.session_state["wd_data_raw"] = df_raw_wd
+            df_wd = load_uploaded_file(wd_file)
+            if df_wd is not None:
+                st.success(f"File loaded: {len(df_wd):,} rows × {len(df_wd.columns)} columns")
+                st.session_state["wd_data_raw"] = df_wd
                 st.session_state["wd_project"] = proj_code
-                
-                summary_wd = build_withdraw_summary(df_raw_wd)
-                if summary_wd is not None:
-                    date_str = f"{wd_date_from.strftime('%Y-%m-%d')} - {wd_date_to.strftime('%Y-%m-%d')}"
-                    st.markdown(f"**{wd_title} ({date_str})**")
-                    
-                    numeric_cols = summary_wd.select_dtypes(include=[np.number]).columns
-                    total_row = {}
-                    for c in summary_wd.columns:
-                        if c == "Agent Group":
-                            total_row[c] = "Total/Average"
-                        elif c in numeric_cols:
-                            total_row[c] = summary_wd[c].sum()
-                        elif c in ["Avg PT","Min PT","Max PT"]:
-                            total_row[c] = "-"
-                        elif c.endswith("%"):
-                            total_row[c] = "100.00%"
-                        elif c == "Success Rate":
-                            try:
-                                total_wd = summary_wd["WD Count"].sum()
-                                total_fail = summary_wd["Failed Payment"].sum()
-                                total_row[c] = f"{((total_wd - total_fail) / total_wd * 100):.2f}%" if total_wd > 0 else "-"
-                            except:
-                                total_row[c] = "-"
-                        else:
-                            total_row[c] = "-"
-                    
-                    display_df_wd = pd.concat([summary_wd, pd.DataFrame([total_row])], ignore_index=True)
-                    display_summary_table(display_df_wd, "")
-                    
-                    csv_buf_wd = io.StringIO()
-                    display_df_wd.to_csv(csv_buf_wd, index=False)
-                    st.download_button("Download Summary CSV", csv_buf_wd.getvalue(), f"withdraw_summary_{wd_date_from}.csv", "text/csv")
+        else:
+            with st.spinner("Loading data from Supabase..."):
+                df_wd, err_wd = load_project_file_app(proj_id)
+            if err_wd:
+                st.warning(f"Could not auto-load: {err_wd}. Please upload a file manually.")
+            elif df_wd is not None and not df_wd.empty:
+                st.session_state["wd_data_raw"] = df_wd
+                st.session_state["wd_project"] = proj_code
+
+        if df_wd is not None and not df_wd.empty:
+            date_col_wd = _find_col_ar(df_wd, "date", "created_at", "transaction_date", "tx_date", "order_date", "create_time")
+            date_label_wd = ""
+            if date_col_wd:
+                try:
+                    dates_wd = pd.to_datetime(df_wd[date_col_wd], errors="coerce").dropna()
+                    if len(dates_wd) > 0:
+                        date_label_wd = f" ( {dates_wd.min().strftime('%Y-%m-%d')} — {dates_wd.max().strftime('%Y-%m-%d')} )"
+                except:
+                    pass
+            res_wd = compute_agent_summary_daily(df_wd, [wd_merchant], "withdraw")
+            if res_wd and res_wd[0]:
+                rows_wd, totals_wd = res_wd
+                render_agent_table_daily(rows_wd, totals_wd, f"{wd_title}{date_label_wd}", "withdraw")
+                csv_buf_wd = io.StringIO()
+                pd.DataFrame(rows_wd).to_csv(csv_buf_wd, index=False)
+                st.download_button("Download Summary CSV", csv_buf_wd.getvalue(), f"withdraw_summary_{wd_date_from}.csv", "text/csv")
+            else:
+                alt_m_wd = {"JP-JWINR": ["JP-INR", "JPINR", "JP INR", "JP"], "VF": ["VF-INR", "VFINR"]}
+                res_wd2 = compute_agent_summary_daily(df_wd, alt_m_wd.get(wd_merchant, []), "withdraw")
+                if res_wd2 and res_wd2[0]:
+                    rows_wd, totals_wd = res_wd2
+                    render_agent_table_daily(rows_wd, totals_wd, f"{wd_title}{date_label_wd}", "withdraw")
                 else:
-                    st.warning("Could not build summary. Please check your file has the required columns.")
-                    st.markdown("**Raw Data Preview:**")
-                    st.dataframe(df_raw_wd.head(20), use_container_width=True)
+                    st.warning(f"No withdraw data found for merchant '{wd_merchant}'. Check your file columns.")
+                    col_m_wd = _find_col_ar(df_wd, "merchant", "team", "merchant_name", "project")
+                    col_t_wd = _find_col_ar(df_wd, "type", "transaction_type", "tx_type")
+                    if col_m_wd:
+                        st.caption(f"Merchant values: {list(df_wd[col_m_wd].unique()[:20])}")
+                    if col_t_wd:
+                        st.caption(f"Type values: {list(df_wd[col_t_wd].unique()[:20])}")
         else:
             st.info("Upload a withdraw data file (CSV or Excel) to generate the summary table.")
             st.markdown("**Expected columns:** Agent Group, WD Count, WD Amount, RWD Count, RWD Amount, Processing Time, Status, Fail Amount, Failed Payment")
 
-# ─────────────────────────────────────────────────────────────
-# COMMISSION CALCULATION HELPER
-# ─────────────────────────────────────────────────────────────
-def compute_commission(dp_summary, wd_summary):
-    """
-    Compute commission for each agent group.
-    DP Commission = DP Amount * dp_rate%
-    WD Commission = WD Count * wd_fixed_INR + WD Amount * wd_rate%
-    Total = DP Commission + WD Commission
-    """
-    rows = []
-    
-    # Get all agent groups from both summaries
-    agents = set()
-    if dp_summary is not None:
-        agents.update(dp_summary["Agent Group"].str.lower().str.strip().tolist())
-    if wd_summary is not None:
-        agents.update(wd_summary["Agent Group"].str.lower().str.strip().tolist())
-    # Remove totals row
-    agents = {a for a in agents if "total" not in str(a).lower() and "average" not in str(a).lower()}
-    
-    for agent in sorted(agents):
-        row = {"Agent Group": agent.title()}
-        
-        # DP data
-        dp_count = 0
-        dp_amount = 0.0
-        if dp_summary is not None:
-            mask = dp_summary["Agent Group"].str.lower().str.strip() == agent
-            if mask.any():
-                dp_row = dp_summary[mask].iloc[0]
-                dp_count = int(dp_row.get("DP Count", 0))
-                try:
-                    dp_amount = float(str(dp_row.get("DP Amount", 0)).replace(",",""))
-                except:
-                    dp_amount = 0.0
-        
-        # WD data
-        wd_count = 0
-        wd_amount = 0.0
-        if wd_summary is not None:
-            mask_wd = wd_summary["Agent Group"].str.lower().str.strip() == agent
-            if mask_wd.any():
-                wd_row = wd_summary[mask_wd].iloc[0]
-                wd_count = int(wd_row.get("WD Count", 0))
-                try:
-                    wd_amount = float(str(wd_row.get("WD Amount", 0)).replace(",",""))
-                except:
-                    wd_amount = 0.0
-        
-        row["DP Count"] = dp_count
-        row["DP Amount"] = dp_amount
-        row["WD Count"] = wd_count
-        row["WD Amount"] = wd_amount
-        
-        # Find commission rates
-        rates = COMMISSION_RATES.get(agent.lower().strip(), None)
-        if rates is None:
-            # Try partial match
-            for k, v in COMMISSION_RATES.items():
-                if k in agent.lower() or agent.lower() in k:
-                    rates = v
-                    break
-        
-        if rates:
-            dp_rate = rates["dp"]
-            wd_rate = rates["wd"]
-            wd_fixed = rates.get("wd_fixed", 0)
-            
-            dp_commission = dp_amount * dp_rate / 100
-            wd_commission = (wd_amount * wd_rate / 100) + (wd_count * wd_fixed)
-            total_commission = dp_commission + wd_commission
-            
-            row["DP Rate%"] = f"{dp_rate}%"
-            row["WD Rate%"] = f"{wd_rate}% + {wd_fixed} INR/txn" if wd_fixed > 0 else f"{wd_rate}%"
-            row["DP Commission (INR)"] = round(dp_commission, 2)
-            row["WD Commission (INR)"] = round(wd_commission, 2)
-            row["Total Commission (INR)"] = round(total_commission, 2)
-        else:
-            row["DP Rate%"] = "N/A"
-            row["WD Rate%"] = "N/A"
-            row["DP Commission (INR)"] = 0.0
-            row["WD Commission (INR)"] = 0.0
-            row["Total Commission (INR)"] = 0.0
-        
-        rows.append(row)
-    
-    if not rows:
-        return None
-    
-    result = pd.DataFrame(rows)
-    # Add totals
-    total_row = {
-        "Agent Group": "TOTAL",
-        "DP Count": result["DP Count"].sum(),
-        "DP Amount": result["DP Amount"].sum(),
-        "WD Count": result["WD Count"].sum(),
-        "WD Amount": result["WD Amount"].sum(),
-        "DP Rate%": "-",
-        "WD Rate%": "-",
-        "DP Commission (INR)": result["DP Commission (INR)"].sum(),
-        "WD Commission (INR)": result["WD Commission (INR)"].sum(),
-        "Total Commission (INR)": result["Total Commission (INR)"].sum(),
-    }
-    result = pd.concat([result, pd.DataFrame([total_row])], ignore_index=True)
-    return result
 
-# ─────────────────────────────────────────────────────────────
-# REPORTS MODULE
-# ─────────────────────────────────────────────────────────────
 def show_reports():
     st.markdown("## Reports")
     project = project_selector()
@@ -773,7 +1068,7 @@ def show_reports():
         report_tabs = st.tabs(["Commission Report Summary", "All Reports"])
         
         with report_tabs[0]:
-            st.markdown(f"### Commission Report Summary — {proj_name}")
+            st.markdown(f"### Commission Report Summary â {proj_name}")
             st.info("This report computes agent commissions based on Deposit and Withdraw data. Upload both files or use data from the Daily Performance tab.")
             
             col1, col2 = st.columns(2)
@@ -811,7 +1106,7 @@ def show_reports():
                     
                     if commission_df is not None:
                         date_str = f"{date_from_r.strftime('%Y-%m-%d')} to {date_to_r.strftime('%Y-%m-%d')}"
-                        st.markdown(f"### Commission Summary — {proj_name} ({date_str})")
+                        st.markdown(f"### Commission Summary â {proj_name} ({date_str})")
                         
                         # Highlight totals row
                         def highlight_totals(row):
@@ -855,7 +1150,7 @@ def show_reports():
                 reports = sb.table("reports").select("*").eq("project_id", pid).order("created_at", desc=True).execute()
                 if reports.data:
                     for r in reports.data:
-                        with st.expander(f"{r.get('title','Report')} — {r.get('report_date','')[:10]}"):
+                        with st.expander(f"{r.get('title','Report')} â {r.get('report_date','')[:10]}"):
                             st.write(f"Type: {r.get('report_type','')} | Created: {r.get('created_at','')[:10]}")
                             if r.get("html_content"):
                                 st.download_button("Download HTML", r["html_content"], f"report_{r['id'][:8]}.html", "text/html", key=f"dl_{r['id']}")
@@ -864,7 +1159,7 @@ def show_reports():
             except Exception as e:
                 st.error(f"Error: {e}")
     else:
-        st.info(f"Reports for **{proj_name}** — coming soon.")
+        st.info(f"Reports for **{proj_name}** â coming soon.")
 
 # PLACEHOLDERS
 def show_recon():
