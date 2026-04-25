@@ -144,15 +144,12 @@ def compute_agent_summary(df, merchant_filter, tx_type_filter):
     # filter by type
     if col_type and tx_type_filter:
         kw = tx_type_filter.lower()
-        # Support: deposit/withdraw, dep/wd, d/w, in/out, credit/debit
-        type_map = {
-            "deposit": ["dep", "deposit", "in", "credit", "d"],
-            "withdraw": ["wd", "withdraw", "withdrawal", "out", "debit", "w"],
-        }
-        keywords = type_map.get(kw, [kw[:3]])
-        mask_t = d[col_type].astype(str).str.lower().str.strip().apply(
-            lambda v: any(k in v for k in keywords)
-        )
+        # Match: Deposit, deposit, DEP, dep, DP -> deposit; Withdraw, withdraw, WD, wd -> withdraw
+        type_series = d[col_type].astype(str).str.lower().str.strip().str.lower().str.strip()
+        if kw == "deposit":
+            mask_t = type_series.str.startswith("dep") | (type_series == "d") | type_series.str.contains("^deposit")
+        else:
+            mask_t = type_series.str.startswith("with") | type_series.str.startswith("wd") | (type_series == "w") | type_series.str.contains("^withdraw")
         d = d[mask_t]
 
     if d.empty:
