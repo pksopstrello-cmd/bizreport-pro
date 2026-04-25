@@ -144,7 +144,15 @@ def compute_agent_summary(df, merchant_filter, tx_type_filter):
     # filter by type
     if col_type and tx_type_filter:
         kw = tx_type_filter.lower()
-        mask_t = d[col_type].astype(str).str.lower().str.contains(kw[:3])
+        # Support: deposit/withdraw, dep/wd, d/w, in/out, credit/debit
+        type_map = {
+            "deposit": ["dep", "deposit", "in", "credit", "d"],
+            "withdraw": ["wd", "withdraw", "withdrawal", "out", "debit", "w"],
+        }
+        keywords = type_map.get(kw, [kw[:3]])
+        mask_t = d[col_type].astype(str).str.lower().str.strip().apply(
+            lambda v: any(k in v for k in keywords)
+        )
         d = d[mask_t]
 
     if d.empty:
@@ -560,10 +568,14 @@ def show_performance():
                         rows, totals = res2
                         render_agent_table(rows, totals, f"{title_base}{date_label}", tx_type)
                     else:
-                        st.warning(f"No {tx_type} data found for {merchant}. Check merchant column values in your CSV.")
+                        st.warning(f"No {tx_type} data found for {merchant}. Check merchant/type column values in your CSV.")
                         col_m = find_col(df,"merchant","team","agent_team","merchant_name","project","channel")
+                        col_t = find_col(df,"type","transaction_type","tx_type","order_type")
                         if col_m:
                             vals = df[col_m].unique()[:20]
                             st.caption(f"Merchant values found: {list(vals)}")
+                        if col_t:
+                            tvals = df[col_t].unique()[:20]
+                            st.caption(f"Type values found: {list(tvals)}")
 
 show_performance()
