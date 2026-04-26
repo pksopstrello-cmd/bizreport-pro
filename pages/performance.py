@@ -147,9 +147,9 @@ def compute_agent_summary(df, merchant_filter, tx_type_filter):
         # Match: Deposit, deposit, DEP, dep, DP -> deposit; Withdraw, withdraw, WD, wd -> withdraw
         type_series = d[col_type].astype(str).str.lower().str.strip().str.lower().str.strip()
         if kw == "deposit":
-            mask_t = type_series.str.startswith("dep") | (type_series == "d") | type_series.str.contains("^deposit")
+            mask_t = (type_series.str.startswith("dep") | (type_series == "d") | type_series.str.contains("^deposit")) & ~type_series.str.contains("revert")
         else:
-            mask_t = type_series.str.startswith("with") | type_series.str.startswith("wd") | (type_series == "w") | type_series.str.contains("^withdraw")
+            mask_t = (type_series.str.startswith("with") | type_series.str.startswith("wd") | (type_series == "w") | type_series.str.contains("^withdraw")) & ~type_series.str.contains("revert")
         d = d[mask_t]
 
     if d.empty:
@@ -542,30 +542,29 @@ def show_performance():
                 else:
                     st.warning(f"No {tx_type} data found for VF merchant.")
     else:
-        # JP JW INR: two merchants JP-INR and DP-INR
-        tab_names = ["JP-JWINR (Deposit)","JP-JWINR (Withdraw)","DP-JWINR (Deposit)","DP-JWINR (Withdraw)"]
+        # JP JW INR: both JP-JWINR and DP-JWINR merchants combined for each type
+        tab_names = ["JP-JWINR (Deposit)", "DP-JWINR (Withdraw)"]
         tabs = st.tabs(tab_names)
+        all_merchants = ["JP-JWINR", "DP-JWINR"]
         configs = [
-            ("JP-JWINR","deposit","JP-JWINR Agent Deposit Data"),
-            ("JP-JWINR","withdraw","JP-JWINR Agent Withdraw Data"),
-            ("DP-JWINR","deposit","DP-JWINR Agent Deposit Data"),
-            ("DP-JWINR","withdraw","DP-JWINR Agent Withdraw Data"),
+            (all_merchants, "deposit", "JP-JWINR Agent Deposit Data"),
+            (all_merchants, "withdraw", "DP-JWINR Agent Withdraw Data"),
         ]
-        for i, (merchant, tx_type, title_base) in enumerate(configs):
+        for i, (merchants, tx_type, title_base) in enumerate(configs):
             with tabs[i]:
-                res = compute_agent_summary(df, [merchant], tx_type)
+                res = compute_agent_summary(df, merchants, tx_type)
                 if res and res[0]:
                     rows, totals = res
                     render_agent_table(rows, totals, f"{title_base}{date_label}", tx_type)
                 else:
                     # try alternate merchant names
-                    alt = {"JP-JWINR":["JP-INR","JPINR","JP INR","JP"],"DP-JWINR":["DP-INR","DPINR","DP INR","DP"]}
-                    res2 = compute_agent_summary(df, alt.get(merchant,[]), tx_type)
+                    alt_merchants = ["JP-INR", "JPINR", "JP INR", "JP", "DP-INR", "DPINR", "DP INR", "DP"]
+                    res2 = compute_agent_summary(df, alt_merchants, tx_type)
                     if res2 and res2[0]:
                         rows, totals = res2
                         render_agent_table(rows, totals, f"{title_base}{date_label}", tx_type)
                     else:
-                        st.warning(f"No {tx_type} data found for {merchant}. Check merchant/type column values in your CSV.")
+                        st.warning(f"No {tx_type} data found. Check merchant/type column values in your CSV.")
                         col_m = find_col(df,"merchant","team","agent_team","merchant_name","project","channel")
                         col_t = find_col(df,"type","transaction_type","tx_type","order_type")
                         if col_m:
