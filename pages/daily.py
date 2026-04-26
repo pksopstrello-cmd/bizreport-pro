@@ -20,6 +20,14 @@ def find_col(df, *candidates):
             return norm[k]
     return None
 
+def find_col_contains(df, *keywords):
+    for col in df.columns:
+        cl = col.lower()
+        for kw in keywords:
+            if kw.lower() in cl:
+                return col
+    return None
+
 def fmt_num(v, dec=0):
     if pd.isna(v) or v == 0:
         return "-"
@@ -69,16 +77,26 @@ def load_project_file(project_id):
 
 SUCCESS_VALS = {"success", "successful", "1", "true", "yes", "completed", "approved", "1.0"}
 
+def detect_date_col(df):
+    exact = find_col(df,
+        "date", "created_at", "transaction_date", "tx_date", "order_date",
+        "create_time", "payment_date", "payment_create_time",
+        "complete_time", "payment_complete_time", "payment_create_time"
+    )
+    if exact:
+        return exact
+    return find_col_contains(df, "create time", "create_time", "date", "time")
+
 def compute_daily_summary(df, merchant_filter, tx_type_filter):
     d = df.copy()
-    col_merchant = find_col(d, "merchant", "team", "agent_team", "merchant_name", "project", "channel")
-    col_type = find_col(d, "type", "transaction_type", "tx_type", "order_type")
-    col_date = find_col(d, "date", "created_at", "transaction_date", "tx_date", "order_date", "create_time", "payment_date")
-    col_amount = find_col(d, "amount", "dp_amount", "wd_amount", "order_amount", "pay_amount")
-    col_status = find_col(d, "status", "transaction_status", "order_status", "result", "is_success")
+    col_merchant = find_col(d, "merchant", "team", "agent_team", "merchant_name", "project", "channel") or find_col_contains(d, "merchant")
+    col_type = find_col(d, "type", "transaction_type", "tx_type", "order_type") or find_col_contains(d, "transaction type", "type")
+    col_date = detect_date_col(d)
+    col_amount = find_col(d, "amount", "dp_amount", "wd_amount", "order_amount", "pay_amount") or find_col_contains(d, "amount")
+    col_status = find_col(d, "status", "transaction_status", "order_status", "result", "is_success") or find_col_contains(d, "status")
     col_rdp = find_col(d, "rdp_count", "rop_count", "rwd_count", "mwd_count", "mdp_count", "manual_count", "is_manual", "is_rdp", "is_rwd")
     col_rdp_amt = find_col(d, "rdp_amount", "rop_amount", "rwd_amount", "mwd_amount", "mdp_amount", "manual_amount")
-    col_fail_amt = find_col(d, "fail_amount", "failed_amount", "fail amount")
+    col_fail_amt = find_col(d, "fail_amount", "failed_amount")
     if col_merchant and merchant_filter:
         mask_m = d[col_merchant].astype(str).str.upper().isin([m.upper() for m in merchant_filter])
         d = d[mask_m]
@@ -86,9 +104,9 @@ def compute_daily_summary(df, merchant_filter, tx_type_filter):
         kw = tx_type_filter.lower()
         type_series = d[col_type].astype(str).str.lower().str.strip()
         if kw == "deposit":
-            mask_t = (type_series.str.startswith("dep") | type_series.str.contains("^deposit")) & ~type_series.str.contains("revert")
+            mask_t = type_series.str.contains("deposit") & ~type_series.str.contains("revert")
         else:
-            mask_t = (type_series.str.startswith("with") | type_series.str.startswith("wd") | type_series.str.contains("^withdraw")) & ~type_series.str.contains("revert")
+            mask_t = (type_series.str.contains("withdraw") | type_series.str.startswith("wd")) & ~type_series.str.contains("revert")
         d = d[mask_t]
     if d.empty or col_date is None:
         return None
@@ -101,13 +119,17 @@ def compute_daily_summary(df, merchant_filter, tx_type_filter):
         d["_amount"] = pd.to_numeric(d[col_amount], errors="coerce").fillna(0)
     else:
         d["_amount"] = 0
+    is_manual = pd.Series(False, index=d.index)
     if col_rdp:
         rdp_vals = d[col_rdp].astype(str).str.lower()
-        is_manual = rdp_vals.isin(["1", "true", "yes", "rdp", "rwd", "manual", "1.0"])
-        if is_manual.sum() == 0:
-            is_manual = d[col_rdp].fillna(0).astype(float) > 0
-    else:
-        is_manual = pd.Series(False, index=d.index)
+        manual_flags = rdp_vals.isin(["1", "true", "yes", "rdp", "rwd", "manual", "1.0", "mdp", "mwd"])
+        if manual_flags.sum() == 0:
+            try:
+                is_manual = d[col_rdp].fillna(0).astype(float) > 0
+            except Exception:
+                is_manual = manual_flags
+        else:
+            is_manual = manual_flags
     d["_is_manual"] = is_manual
     if col_status:
         d["_success"] = d[col_status].astype(str).str.lower().str.strip().isin(SUCCESS_VALS)
@@ -147,7 +169,7 @@ def compute_daily_summary(df, merchant_filter, tx_type_filter):
         total_success = day["_success"].sum()
         total_approve_pct = (total_success / total_count * 100) if total_count > 0 else 0
         rdp_count = mdp_count
-        rdp_amt = manual["_rdp_amt"].sum()
+        rdp_amt_val = manual["_rdp_amt"].sum()
         rows.append({
             "Date": date_val.strftime("%m/%d"),
             dp_lbl: fmt_num(auto_amt, 2),
@@ -163,13 +185,13 @@ def compute_daily_summary(df, merchant_filter, tx_type_filter):
             "Auto Approve %": fmt_pct(auto_approve_pct),
             "Total Approve %": fmt_pct(total_approve_pct),
             f"{rdp_lbl} Count": fmt_num(rdp_count) if rdp_count > 0 else "-",
-            f"{rdp_lbl} Amount": fmt_num(rdp_amt, 2) if rdp_amt > 0 else "-",
+            f"{rdp_lbl} Amount": fmt_num(rdp_amt_val, 2) if rdp_amt_val > 0 else "-",
             "_auto_amt": auto_amt, "_auto_count": auto_count,
             "_mdp_amt": mdp_amt, "_mdp_count": mdp_count,
             "_net_amt": net_amt, "_fail_amt": float(fail_amt),
             "_fail_count": fail_count, "_total_count": total_count,
             "_total_success": int(total_success), "_auto_success": int(auto_success),
-            "_rdp_count": rdp_count, "_rdp_amt": float(rdp_amt),
+            "_rdp_count": rdp_count, "_rdp_amt": float(rdp_amt_val),
         })
     if not rows:
         return None
@@ -252,7 +274,7 @@ def show_daily():
     if df is None or df.empty:
         st.warning("No data found in the uploaded file.")
         return
-    col_date = find_col(df, "date", "created_at", "transaction_date", "tx_date", "order_date", "create_time", "payment_date")
+    col_date = detect_date_col(df)
     date_label = ""
     if col_date:
         try:
@@ -285,12 +307,13 @@ def show_daily():
                 render_daily_table(display_rows, title, dp_lbl, mdp_lbl, rdp_lbl)
             else:
                 st.warning(f"No {tx_type} data found.")
-                col_m = find_col(df, "merchant", "team", "agent_team", "merchant_name", "project", "channel")
-                col_t = find_col(df, "type", "transaction_type", "tx_type", "order_type")
+                col_m = find_col(df, "merchant", "team", "agent_team", "merchant_name", "project", "channel") or find_col_contains(df, "merchant")
+                col_t = find_col(df, "type", "transaction_type", "tx_type", "order_type") or find_col_contains(df, "transaction type", "type")
                 if col_m:
                     st.caption(f"Merchant values found: {list(df[col_m].unique()[:20])}")
                 if col_t:
                     st.caption(f"Type values found: {list(df[col_t].unique()[:20])}")
                 st.caption(f"All columns: {list(df.columns)}")
+                st.caption(f"Date col detected: {detect_date_col(df)}")
 
 show_daily()
