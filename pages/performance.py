@@ -567,11 +567,14 @@ def show_performance():
                         st.warning(f"No {tx_type} data found. Check merchant/type column values in your CSV.")
                         col_m = find_col(df,"merchant","team","agent_team","merchant_name","project","channel")
                         col_t = find_col(df,"type","transaction_type","tx_type","order_type")
+                        col_ag = find_col(df,"agent_group","agent","agent_name","agentgroup","pay_agent")
                         if col_m:
                             vals = df[col_m].unique()[:20]
                             st.caption(f"Merchant values found: {list(vals)}")
                         if col_t:
                             tvals = df[col_t].unique()[:20]
                             st.caption(f"Type values found: {list(tvals)}")
+                        st.caption(f"All columns: {list(df.columns)}")
+                        st.caption(f"Agent col found: {col_ag}")
 
 show_performance()
